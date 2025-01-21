@@ -7,7 +7,7 @@ export function Layout({ children }: { children: Child }) {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Document</title>
-        <link rel="stylesheet" href="css/style.css" />
+        <link rel="stylesheet" href="/css/style.css" />
       </head>
       <body>
         <div class="min-h-screen flex flex-col">
@@ -27,7 +27,7 @@ function Nav() {
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
           <a href="/">ImoExclusivo</a>
           <ul className="flex space-x-6">
-            <li>
+            {/*<li>
               <a href="/inscricao">Inscrever</a>
             </li>
             <li>
@@ -35,6 +35,10 @@ function Nav() {
             </li>
             <li>
               <a href="/contact">Contacto</a>
+            </li>
+            */}
+            <li>
+              <a href="/back-office">Administração Interna</a>
             </li>
           </ul>
         </div>

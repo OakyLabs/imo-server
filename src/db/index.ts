@@ -13,3 +13,5 @@ export function create_db(env: Environment) {
 
   return db;
 }
+
+export type IDatabase = ReturnType<typeof create_db>;

@@ -5,9 +5,8 @@ assets = { directory = "public" }
 
 # compatibility_flags = [ "nodejs_compat" ]
 
-# [vars]
-# MY_VAR = "my-variable"
-
+[vars]
+DATABASE_URL = "http://127.0.0.1:8080"
 # [[kv_namespaces]]
 # binding = "MY_KV_NAMESPACE"
 # id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

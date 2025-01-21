@@ -6,10 +6,12 @@
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.4.2",
     "@libsql/client": "^0.14.0",
     "@types/node": "^22.10.7",
     "drizzle-orm": "^0.38.4",
     "hono": "^4.6.17",
+    "hono-sessions": "^0.7.1",
     "pino": "^9.6.0",
     "zod": "^3.24.1"
   },

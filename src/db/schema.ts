@@ -6,6 +6,11 @@ export const cache_table = sqliteTable("caches", {
   value: text().notNull(),
 });
 
+export const sessions_table = sqliteTable("sessions", {
+  id: text().primaryKey(),
+  data: text().notNull(),
+});
+
 export const service_table = sqliteTable("services", {
   id: integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
   name: text().unique().notNull(),
@@ -71,7 +76,7 @@ export const concelhosRelations = relations(
       references: [districts_table.id],
     }),
     properties: many(properties_table),
-  })
+  }),
 );
 
 export const distritosRelations = relations(districts_table, ({ many }) => ({
