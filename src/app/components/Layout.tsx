@@ -8,6 +8,7 @@ export function Layout({ children }: { children: Child }) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Document</title>
         <link rel="stylesheet" href="/css/style.css" />
+        <script src="https://unpkg.com/htmx.org@2.0.4"></script>
       </head>
       <body>
         <div class="min-h-screen flex flex-col">

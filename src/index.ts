@@ -21,14 +21,11 @@ app.use((c, next) => {
 app.use("*", async (c, next) => {
   const db = create_db(c.env);
 
-  console.log(await db.select().from(districts_table));
-  //console.log(getCookie(c, "session"));
-
   const store = new DrizzleSessionStore(db);
 
   return sessionMiddleware({
     encryptionKey: "password_at_least_32_characters_long", // Required for CookieStore, recommended for others
-    expireAfterSeconds: 900, // Expire session after 15 minutes of inactivity
+    expireAfterSeconds: 900 * 4, // Expire session after 15 minutes of inactivity
     cookieOptions: {
       sameSite: "Lax", // Recommended for basic CSRF protection in modern browsers
       path: "/", // Required for this library to work properly
@@ -39,13 +36,10 @@ app.use("*", async (c, next) => {
 });
 
 //app.get("/", async (c) => {
-//  console.log("DONE?");
 //  const session = c.get("session");
 //  ////
-//  console.log("counter", session.get("counter"), JSON.stringify(session));
 //  ////
 //  await session.set("counter", (session.get("counter") || 0) + 1);
-//  console.log("counter post", session.get("counter"), JSON.stringify(session));
 //  //
 //  return c.html(`<h1>You have visited this page ${session.get("counter")} times</h1>`);
 //});

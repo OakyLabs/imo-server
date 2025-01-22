@@ -8,10 +8,9 @@ async function wait() {
 }
 
 export class DrizzleSessionStore implements Store {
-  private readonly db: IDatabase;
+  readonly #db: IDatabase;
   constructor(db: IDatabase) {
-    console.log("created");
-    this.db = db;
+    this.#db = db;
   }
 
   async getSessionById(
@@ -21,24 +20,15 @@ export class DrizzleSessionStore implements Store {
     if (!session_id) {
       return null;
     }
-    console.log(await this.db.select().from(districts_table));
-    console.log("Called");
 
-    console.log("About to");
-    const db = this.db;
-    const query = await db
+    const query = await this.#db
       .select()
       .from(sessions_table)
       .where(eq(sessions_table.id, session_id));
 
-    console.log("Done?");
-
-    console.log("QUERY");
-
     if (query.length) {
       return JSON.parse(query[0].data) as SessionData;
     }
-    console.log("NTOHING");
 
     return null;
   }
@@ -47,7 +37,7 @@ export class DrizzleSessionStore implements Store {
     sessionId: string,
     initialData: SessionData,
   ): Promise<void> {
-    await this.db
+    await this.#db
       .insert(sessions_table)
       .values({ id: sessionId, data: JSON.stringify(initialData) });
   }
@@ -56,14 +46,14 @@ export class DrizzleSessionStore implements Store {
     sessionId: string,
     sessionData: SessionData,
   ): Promise<void> {
-    await this.db
+    await this.#db
       .update(sessions_table)
       .set({ data: JSON.stringify(sessionData) })
       .where(eq(sessions_table.id, sessionId));
   }
 
   async deleteSession(sessionId: string): Promise<void> {
-    await this.db
+    await this.#db
       .delete(sessions_table)
       .where(eq(sessions_table.id, sessionId));
   }

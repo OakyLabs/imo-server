@@ -1,6 +1,7 @@
 //import "dotenv/config";
 import { defineConfig } from "drizzle-kit";
 import { parse_env } from "./src/env";
+
 const env = parse_env(process.env);
 
 export default defineConfig({
