@@ -4,6 +4,13 @@ import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 export const cache_table = sqliteTable("caches", {
   key: text().unique().primaryKey(),
   value: text().notNull(),
+  created_at: integer({ mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updated_at: integer({ mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date())
+    .$onUpdate(() => new Date()),
 });
 
 export const sessions_table = sqliteTable("sessions", {
@@ -33,8 +40,11 @@ export const style_lookup_table = sqliteTable("styles", {
   name: text().unique(),
 });
 
+export type DbStyle = InferSelectModel<typeof style_lookup_table>;
+
 export const properties_table = sqliteTable("properties", {
-  url: text().unique().primaryKey(),
+  id: integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
+  url: text().unique().notNull(),
   title: text().notNull(),
   price: text(),
   style_lookup_id: integer().references(() => style_lookup_table.id),
@@ -56,6 +66,8 @@ export const districts_table = sqliteTable("distritos", {
   name: text().unique().notNull(),
 });
 
+export type DbDistrict = InferSelectModel<typeof districts_table>;
+
 export const concelhos_table = sqliteTable("concelhos", {
   id: integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
   name: text().unique().notNull(),
@@ -63,6 +75,8 @@ export const concelhos_table = sqliteTable("concelhos", {
     .references(() => districts_table.id)
     .notNull(),
 });
+
+export type DbMunicipality = InferSelectModel<typeof concelhos_table>;
 
 export const style_relations = relations(style_lookup_table, ({ many }) => ({
   estates: many(properties_table),
