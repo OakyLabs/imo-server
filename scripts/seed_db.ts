@@ -138,7 +138,7 @@ const links_and_urls: Array<
     use: true,
   },
   {
-    name: "listmed",
+    name: "lismed",
     link: "https://www.lismed.com/",
     use: true,
   },

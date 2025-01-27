@@ -1,55 +1,53 @@
-import { DbProperty, DbStyle } from "../../../../db/schema";
+import { DbProperty } from "../../../../db/schema";
 import { Pagination } from "./pagination";
 
-type StyleIncompleteProps = {
-  all_styles: Array<DbStyle>;
+type PriceIncompleteProps = {
   incomplete_properties: Array<DbProperty>;
   curr_page: number;
   total_pages: number;
 };
 
-export function StyleIncomplete(props: StyleIncompleteProps) {
+export function PriceIncomplete(props: PriceIncompleteProps) {
   return (
     <div
       class="bg-white shadow-md rounded-lg p-6 mb-8 max-w-7xl"
-      id="style_listing"
+      id="price_listing"
     >
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Classificação de Propriedade</h2>
-        <Pagination {...props} sector="style" />
+        <h2 className="text-xl font-semibold">Price Insufficient Data</h2>
+        <Pagination {...props} sector="price" />
       </div>
       <div>
-        <ul className="space-y-4">
+        <ul class="space-y-4">
           {props.incomplete_properties.map((listing) => (
             <li
-              key={listing.id}
-              className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4"
+              key={listing.url}
+              class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4"
             >
-              <div className="flex-grow">
+              <div class="flex-grow">
                 <a
                   href={listing.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   class="inline-flex items-center text-blue-600 hover:text-blue-800"
                 >
-                  <span class="mr-2">{listing.title}</span>
+                  <span class="mr-2 overflow-hidden truncate max-w-md">
+                    {listing.title}
+                  </span>
                   {/*<ExternalLink class="w-4 h-4" /> */}
                 </a>
               </div>
               <form
                 class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4"
                 method="post"
-                action={`/back-office/save/style/${listing.id}`}
+                action={`/back-office/save/price/${listing.id}`}
               >
-                <select className="border rounded px-2 py-1" name="style">
-                  <option value="">Selectionar Estilo de Propriedade</option>
-                  {props.all_styles.map((type) => (
-                    <option key={type} value={type.id}>
-                      {type.name}
-                    </option>
-                  ))}
-                </select>
-
+                <input
+                  type="text"
+                  value="Não listado"
+                  name="price"
+                  class="border rounded px-2 py-1 w-32"
+                />
                 <button
                   type="submit"
                   class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"

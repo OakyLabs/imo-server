@@ -4,7 +4,6 @@ import { sessionMiddleware, Store } from "hono-sessions";
 import { parse_env } from "./env";
 import { create_db } from "./db";
 import { DrizzleSessionStore } from "./db/session-store";
-import { districts_table } from "./db/schema";
 import { AppBindings } from "./types";
 import { back_office_router } from "./app/back-office.router";
 
@@ -25,7 +24,7 @@ app.use("*", async (c, next) => {
 
   return sessionMiddleware({
     encryptionKey: "password_at_least_32_characters_long", // Required for CookieStore, recommended for others
-    expireAfterSeconds: 900 * 4, // Expire session after 15 minutes of inactivity
+    expireAfterSeconds: 60 * 10 * 6,
     cookieOptions: {
       sameSite: "Lax", // Recommended for basic CSRF protection in modern browsers
       path: "/", // Required for this library to work properly

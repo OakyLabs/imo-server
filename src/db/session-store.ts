@@ -1,11 +1,7 @@
 import { SessionData, Store } from "hono-sessions";
 import { IDatabase } from ".";
-import { districts_table, sessions_table } from "./schema";
+import { sessions_table } from "./schema";
 import { eq } from "drizzle-orm";
-
-async function wait() {
-  return new Promise((r) => setTimeout(r, 300));
-}
 
 export class DrizzleSessionStore implements Store {
   readonly #db: IDatabase;
@@ -14,9 +10,8 @@ export class DrizzleSessionStore implements Store {
   }
 
   async getSessionById(
-    session_id: string,
+    session_id: string
   ): Promise<SessionData | null | undefined> {
-    await wait();
     if (!session_id) {
       return null;
     }
@@ -35,7 +30,7 @@ export class DrizzleSessionStore implements Store {
 
   async createSession(
     sessionId: string,
-    initialData: SessionData,
+    initialData: SessionData
   ): Promise<void> {
     await this.#db
       .insert(sessions_table)
@@ -44,7 +39,7 @@ export class DrizzleSessionStore implements Store {
 
   async persistSessionData(
     sessionId: string,
-    sessionData: SessionData,
+    sessionData: SessionData
   ): Promise<void> {
     await this.#db
       .update(sessions_table)

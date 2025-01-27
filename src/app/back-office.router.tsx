@@ -14,10 +14,14 @@ import {
 } from "../db/schema";
 import { createMiddleware } from "hono/factory";
 import { create_db } from "../db";
-import { and, count, desc, eq, isNotNull, isNull, or } from "drizzle-orm";
+import { and, count, eq, isNotNull, isNull, or } from "drizzle-orm";
 import { Dashboard } from "./pages/back-office/dashboard/dashboard";
 import { ManualEdit } from "./pages/back-office/manual-edit/manual-edit-form.page";
 import { BackOfficeLogin } from "./pages/back-office/login/login";
+import { zValidator } from "@hono/zod-validator";
+import { PriceIncomplete } from "./pages/back-office/manual-edit/price-incomplete.form";
+import { StyleIncomplete } from "./pages/back-office/manual-edit/style-incomplete.form";
+import { MunicipalityIncomplete } from "./pages/back-office/manual-edit/municipality-incomplete.form";
 
 const salt_rounds = 10;
 
@@ -105,7 +109,6 @@ back_office_router.get("/dashboard", admin_logged_in_mw, async (c) => {
       .select({ count: count() })
       .from(service_table)
       .where(eq(service_table.use, false)),
-
     db
       .select({ count: count() })
       .from(service_table)
@@ -147,8 +150,6 @@ back_office_router.get("/dashboard", admin_logged_in_mw, async (c) => {
   const up_services = online[0].count;
   const down_services = offline[0].count;
 
-  console.log(incomplete);
-
   return c.html(
     <Layout>
       <Dashboard
@@ -172,9 +173,11 @@ back_office_router.get("/municipalities", admin_logged_in_mw, async (c) => {
 
   const query = c.req.query("district");
 
-  const all_concelhos_list = await db.query.concelhos_table.findMany({
-    with: { distrito: { columns: { name: true } } },
-  });
+  const all_municipalities_list = await db
+    .select({
+      name: concelhos_table.name,
+    })
+    .from(concelhos_table);
 
   if (!query) {
     return c.html(
@@ -182,7 +185,7 @@ back_office_router.get("/municipalities", admin_logged_in_mw, async (c) => {
         <option disabled value="">
           Select Municipality
         </option>
-        {all_concelhos_list.map((municipality) => (
+        {all_municipalities_list.map((municipality) => (
           <option key={municipality.name} value={municipality.name}>
             {municipality.name}
           </option>
@@ -217,23 +220,51 @@ back_office_router.get("/municipalities", admin_logged_in_mw, async (c) => {
 back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
   const db = create_db(c.env);
 
-  const [price, concelho, style, all_styles, districts, concelhos] =
-    await Promise.all([
-      db.select().from(properties_table).where(isNull(properties_table.price)),
-      db
-        .select()
-        .from(properties_table)
-        .where(isNull(properties_table.concelho_id)),
-      db
-        .select()
-        .from(properties_table)
-        .where(isNull(properties_table.style_lookup_id)),
-      db.select().from(style_lookup_table),
-      db.select().from(districts_table),
-      db.query.concelhos_table.findMany({
-        with: { distrito: { columns: { name: true } } },
-      }),
-    ]);
+  const [
+    price,
+    concelho,
+    style,
+    all_styles,
+    districts,
+    concelhos,
+    [{ count: properties_amount }],
+    [{ count: style_amount }],
+    [{ count: municipalities_amount }],
+  ] = await Promise.all([
+    db
+      .select()
+      .from(properties_table)
+      .where(isNull(properties_table.price))
+      .limit(10),
+    db
+      .select()
+      .from(properties_table)
+      .where(isNull(properties_table.concelho_id))
+      .limit(10),
+    db
+      .select()
+      .from(properties_table)
+      .where(isNull(properties_table.style_lookup_id))
+      .limit(10),
+    db.select().from(style_lookup_table),
+    db.select().from(districts_table),
+    db.query.concelhos_table.findMany({
+      with: { distrito: { columns: { name: true } } },
+    }),
+
+    db
+      .select({ count: count() })
+      .from(properties_table)
+      .where(isNull(properties_table.price)),
+    db
+      .select({ count: count() })
+      .from(properties_table)
+      .where(isNull(properties_table.style_lookup_id)),
+    db
+      .select({ count: count() })
+      .from(properties_table)
+      .where(isNull(properties_table.concelho_id)),
+  ]);
 
   if (!price.length && !concelho.length && !style.length) {
     return c.redirect("/back-office/dashboard");
@@ -241,12 +272,24 @@ back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
 
   return c.html(
     <ManualEdit
-      style_incomplete={style}
-      all_styles={all_styles}
-      districts={districts}
-      municipality_incomplete={concelho}
-      municipalities={concelhos}
-      price_incomplete={price}
+      municipalities={{
+        districts,
+        incomplete_properties: concelho,
+        municipalities: concelhos,
+        total_pages: Math.ceil(municipalities_amount / 10),
+        curr_page: 1,
+      }}
+      price={{
+        incomplete_properties: price,
+        curr_page: 1,
+        total_pages: Math.ceil(properties_amount / 10),
+      }}
+      style={{
+        all_styles,
+        incomplete_properties: style,
+        curr_page: 1,
+        total_pages: Math.ceil(style_amount / 10),
+      }}
     />,
   );
 });
@@ -306,13 +349,11 @@ back_office_router.post(
   admin_logged_in_mw,
   validator("form", (value, c) => {
     const parsed = z.object({ price: z.string().min(3) }).safeParse(value);
-    console.log("HERE?", parsed.success);
 
     if (!parsed.success) {
       c.status(400);
       return c.redirect("/back-office/manual");
     }
-    console.log(" HERE ");
 
     return parsed.data;
   }),
@@ -332,7 +373,6 @@ back_office_router.post(
   }),
   async (c) => {
     const { price } = c.req.valid("form");
-    console.log(price);
     const { param } = c.req.valid("param");
 
     const db = create_db(c.env);
@@ -406,8 +446,6 @@ back_office_router.post(
       .object({ name: z.string(), website: z.string().url() })
       .safeParse(value);
 
-    console.log({ parsed });
-
     if (!parsed.success) {
       return c.redirect("/back-office");
     }
@@ -417,7 +455,6 @@ back_office_router.post(
   async (c) => {
     const body = c.req.valid("form");
 
-    console.log({ body });
     const db = create_db(c.env);
 
     await db
@@ -425,6 +462,89 @@ back_office_router.post(
       .values({ name: body.name, link: body.website, use: false });
 
     return c.redirect("/back-office/dashboard");
+  },
+);
+
+back_office_router.get(
+  "/manual/:sector/:page",
+  admin_logged_in_mw,
+  validator("param", (value, c) => {
+    const parsed = z
+      .object({
+        sector: z.enum(["price", "municipality", "style"]),
+        page: z.coerce.number().int().positive(),
+      })
+      .safeParse(value);
+
+    if (!parsed.success) {
+      return c.redirect("/back-office-manual");
+    }
+
+    return parsed.data;
+  }),
+  async (c) => {
+    const { sector, page } = c.req.valid("param");
+    const db = create_db(c.env);
+
+    const table_col =
+      sector === "price"
+        ? properties_table.price
+        : sector === "style"
+          ? properties_table.style_lookup_id
+          : properties_table.concelho_id;
+
+    const table = await db
+      .select()
+      .from(properties_table)
+      .where(isNull(table_col))
+      .limit(10)
+      .offset((page - 1) * 10);
+
+    const [{ count: total }] = await db
+      .select({ count: count() })
+      .from(properties_table)
+      .where(isNull(table_col));
+
+    const total_pages = Math.ceil(total / 10);
+
+    if (sector === "price") {
+      return c.html(
+        <PriceIncomplete
+          curr_page={page}
+          total_pages={total_pages}
+          incomplete_properties={table}
+        />,
+      );
+    }
+
+    if (sector === "style") {
+      const all_styles = await db.select().from(style_lookup_table);
+      return c.html(
+        <StyleIncomplete
+          curr_page={page}
+          total_pages={total_pages}
+          incomplete_properties={table}
+          all_styles={all_styles}
+        />,
+      );
+    }
+
+    const [districts, municipalities] = await Promise.all([
+      db.select().from(districts_table),
+      db.query.concelhos_table.findMany({
+        with: { distrito: { columns: { name: true } } },
+      }),
+    ]);
+
+    return c.html(
+      <MunicipalityIncomplete
+        curr_page={page}
+        total_pages={total_pages}
+        incomplete_properties={table}
+        municipalities={municipalities}
+        districts={districts}
+      />,
+    );
   },
 );
 

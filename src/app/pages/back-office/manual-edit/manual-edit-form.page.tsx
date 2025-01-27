@@ -6,16 +6,29 @@ import {
 } from "../../../../db/schema";
 import { Layout } from "../../../components/Layout";
 import { MunicipalityIncomplete } from "./municipality-incomplete.form";
-import { PriceIncomplete } from "./price-incomplemte.form";
+import { PriceIncomplete } from "./price-incomplete.form";
 import { StyleIncomplete } from "./style-incomplete.form";
 
 type ManualEditProps = {
-  price_incomplete: Array<DbProperty>;
-  municipality_incomplete: Array<DbProperty>;
-  municipalities: Array<Pick<DbMunicipality, "name">>;
-  districts: Array<DbDistrict>;
-  style_incomplete: Array<DbProperty>;
-  all_styles: Array<DbStyle>;
+  price: {
+    incomplete_properties: Array<DbProperty>;
+    curr_page: number;
+    total_pages: number;
+  };
+
+  style: {
+    incomplete_properties: Array<DbProperty>;
+    curr_page: number;
+    total_pages: number;
+    all_styles: Array<DbStyle>;
+  };
+  municipalities: {
+    incomplete_properties: Array<DbProperty>;
+    districts: Array<Pick<DbDistrict, "name">>;
+    municipalities: Array<Pick<DbMunicipality, "name">>;
+    curr_page: number;
+    total_pages: number;
+  };
 };
 
 export function ManualEdit(props: ManualEditProps) {
@@ -27,23 +40,16 @@ export function ManualEdit(props: ManualEditProps) {
             Propriedades Incompletas
           </h1>
 
-          {props.price_incomplete.length ? (
-            <PriceIncomplete properties={props.price_incomplete} />
+          {props.price.incomplete_properties.length ? (
+            <PriceIncomplete {...props.price} />
           ) : null}
 
-          {props.municipalities.length ? (
-            <MunicipalityIncomplete
-              municipalities={props.municipalities}
-              properties={props.municipality_incomplete}
-              districts={props.districts}
-            />
+          {props.municipalities.incomplete_properties.length ? (
+            <MunicipalityIncomplete {...props.municipalities} />
           ) : null}
 
-          {props.style_incomplete.length ? (
-            <StyleIncomplete
-              all_styles={props.all_styles}
-              properties={props.style_incomplete}
-            />
+          {props.style.incomplete_properties.length ? (
+            <StyleIncomplete {...props.style} />
           ) : null}
         </div>
       </div>
