@@ -7,7 +7,7 @@ export function ServiceForm(props: {
   total_services: number;
 }) {
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
+    <div className="bg-white p-6 rounded-lg shadow-md md:col-span-2" h>
       <h2 className="text-xl font-semibold mb-4">Services</h2>
       <form
         className="space-y-4 mb-4"
