@@ -9,6 +9,7 @@ export function Layout({ children }: { children: Child }) {
         <title>ImoExclusivo</title>
         <link rel="stylesheet" href="/css/style.css" />
         <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+        <script src="//unpkg.com/alpinejs" defer></script>
       </head>
       <body>
         <div class="min-h-screen flex flex-col">

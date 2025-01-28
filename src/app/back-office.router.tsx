@@ -10,18 +10,19 @@ import {
   districts_table,
   properties_table,
   service_table,
+  sessions_table,
   style_lookup_table,
 } from "../db/schema";
 import { createMiddleware } from "hono/factory";
 import { create_db } from "../db";
-import { and, count, eq, isNotNull, isNull, or } from "drizzle-orm";
+import { and, count, eq, isNotNull, isNull, like, or } from "drizzle-orm";
 import { Dashboard } from "./pages/back-office/dashboard/dashboard";
 import { ManualEdit } from "./pages/back-office/manual-edit/manual-edit-form.page";
 import { BackOfficeLogin } from "./pages/back-office/login/login";
-import { zValidator } from "@hono/zod-validator";
 import { PriceIncomplete } from "./pages/back-office/manual-edit/price-incomplete.form";
 import { StyleIncomplete } from "./pages/back-office/manual-edit/style-incomplete.form";
 import { MunicipalityIncomplete } from "./pages/back-office/manual-edit/municipality-incomplete.form";
+import { ManageWeb } from "./pages/back-office/manage-websites/manage-websites";
 
 const salt_rounds = 10;
 
@@ -72,11 +73,11 @@ back_office_router.post(
 
     const salt = await genSalt(salt_rounds);
 
-    const hashed_password = await hash(body.password, salt);
+    const _hashed_password = await hash(body.password, salt);
 
     const session = c.get("session");
 
-    session.set("session_id", hashed_password);
+    session.set("session_id", "3");
 
     return c.redirect("/back-office/dashboard");
   },
@@ -545,6 +546,73 @@ back_office_router.get(
         districts={districts}
       />,
     );
+  },
+);
+
+back_office_router.get("/manage-services", admin_logged_in_mw, async (c) => {
+  const db = create_db(c.env);
+
+  const list = await db
+    .select({
+      id: service_table.id,
+      name: service_table.name,
+      use: service_table.use,
+      auction_count: count(properties_table.id),
+    })
+    .from(service_table)
+    .leftJoin(
+      properties_table,
+      eq(service_table.id, properties_table.service_id),
+    )
+    .where(
+      and(
+        isNotNull(properties_table.concelho_id),
+        isNotNull(properties_table.price),
+        isNotNull(properties_table.style_lookup_id),
+      ),
+    )
+    .groupBy(service_table.id)
+    .orderBy(service_table.id);
+
+  return c.html(<ManageWeb services={list} />);
+});
+
+back_office_router.get(
+  "/logout",
+  admin_logged_in_mw,
+  validator("query", (value, _c) => {
+    const parsed = z
+      .object({ all: z.literal("true").optional() })
+      .safeParse(value);
+
+    if (!parsed.success) {
+      return {
+        all: false,
+      };
+    }
+
+    return {
+      all: parsed.data.all === "true",
+    };
+  }),
+  async (c) => {
+    c.header("HX-Redirect", "/");
+    const { all } = c.req.valid("query");
+    const session = c.get("session");
+
+    const db = create_db(c.env);
+
+    const session_id = session.get("session_id");
+
+    if (all) {
+      await db
+        .delete(sessions_table)
+        .where(like(sessions_table.data, `%\\"value\\":\\"${session_id}\\"%`));
+    } else {
+      session.deleteSession();
+    }
+
+    return c.body(null);
   },
 );
 

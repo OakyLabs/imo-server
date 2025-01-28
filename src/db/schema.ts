@@ -15,7 +15,7 @@ export const cache_table = sqliteTable("caches", {
 
 export const sessions_table = sqliteTable("sessions", {
   id: text().primaryKey(),
-  data: text().notNull(),
+  data: text({ mode: "json" }).notNull(),
 });
 
 export const service_table = sqliteTable("services", {
