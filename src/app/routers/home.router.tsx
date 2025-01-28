@@ -1,7 +1,7 @@
 import { Hono } from "hono";
-import { AppBindings } from "../types";
-import { Layout } from "./components/Layout";
-import { Hero } from "./pages/home";
+import { AppBindings } from "../../types";
+import { Layout } from "../components/Layout";
+import { Hero } from "../pages/home";
 
 const home_router = new Hono<AppBindings>();
 

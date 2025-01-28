@@ -1,5 +1,5 @@
 import pino from "pino";
-import { create_db } from "../src/db/index";
+import { create_db } from "../db/index";
 import distritos_e_concelhos from "../output.json";
 import {
   style_lookup_table,
@@ -8,7 +8,7 @@ import {
   cache_table,
   districts_table,
   concelhos_table,
-} from "../src/db/schema";
+} from "../db/schema";
 import { parse_env } from "../src/env";
 import { logger } from "../src/logger";
 // const client = new PrismaClient();

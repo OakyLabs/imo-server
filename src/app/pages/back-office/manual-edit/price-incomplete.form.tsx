@@ -1,4 +1,4 @@
-import { DbProperty } from "../../../../db/schema";
+import { DbProperty } from "../../../../../db/schema";
 import { Pagination } from "./pagination";
 
 type PriceIncompleteProps = {

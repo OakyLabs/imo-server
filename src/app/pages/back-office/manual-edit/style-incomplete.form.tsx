@@ -1,4 +1,4 @@
-import { DbProperty, DbStyle } from "../../../../db/schema";
+import { DbProperty, DbStyle } from "../../../../../db/schema";
 import { Pagination } from "./pagination";
 
 type StyleIncompleteProps = {

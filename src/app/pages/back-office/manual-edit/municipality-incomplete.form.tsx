@@ -1,4 +1,8 @@
-import { DbProperty, DbDistrict, DbMunicipality } from "../../../../db/schema";
+import {
+  DbProperty,
+  DbDistrict,
+  DbMunicipality,
+} from "../../../../../db/schema";
 import { Pagination } from "./pagination";
 
 type MunicipalityIncompleteProps = {
@@ -49,7 +53,9 @@ export function MunicipalityIncomplete(props: MunicipalityIncompleteProps) {
                   name="district"
                   hx-get="/back-office/municipalities"
                   hx-trigger="change"
-                  hx-target={`#municipalities-${encodeURIComponent(listing.id)}`}
+                  hx-target={`#municipalities-${encodeURIComponent(
+                    listing.id
+                  )}`}
                   hx-swap="innerHTML"
                 >
                   <option value="">Select District</option>

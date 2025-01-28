@@ -1,4 +1,4 @@
-import { Service } from "../../../../db/schema";
+import { Service } from "../../../../../db/schema";
 
 export function ServiceForm(props: {
   services: Array<Pick<Service, "name">>;

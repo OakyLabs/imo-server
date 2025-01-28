@@ -1,4 +1,4 @@
-import { Service } from "../../../../db/schema";
+import { Service } from "../../../../../db/schema";
 import { Layout } from "../../../components/Layout";
 
 export function ManageWeb({

@@ -1,4 +1,4 @@
-import { type Service } from "../../../../db/schema";
+import { type Service } from "../../../../../db/schema";
 import { ActiveUsersCount } from "./active-user-count";
 import { ServiceForm } from "./service-form";
 import { InsufficientDataCount } from "./insufficient-data";

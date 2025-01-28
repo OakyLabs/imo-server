@@ -1,11 +1,11 @@
 import { Hono } from "hono";
-import { home_router } from "./app/home.router";
-import { sessionMiddleware, Store } from "hono-sessions";
+import { home_router } from "./app/routers/home.router";
+import { sessionMiddleware } from "hono-sessions";
 import { parse_env } from "./env";
-import { create_db } from "./db";
-import { DrizzleSessionStore } from "./db/session-store";
 import { AppBindings } from "./types";
 import { back_office_router } from "./app/back-office.router";
+import { create_db } from "../db";
+import { DrizzleSessionStore } from "../db/session-store";
 
 const app = new Hono<AppBindings>();
 

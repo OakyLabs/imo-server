@@ -3,7 +3,7 @@ import {
   DbMunicipality,
   DbProperty,
   DbStyle,
-} from "../../../../db/schema";
+} from "../../../../../db/schema";
 import { Layout } from "../../../components/Layout";
 import { MunicipalityIncomplete } from "./municipality-incomplete.form";
 import { PriceIncomplete } from "./price-incomplete.form";

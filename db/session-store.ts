@@ -22,7 +22,8 @@ export class DrizzleSessionStore implements Store {
       .where(eq(sessions_table.id, session_id));
 
     if (query.length) {
-      return JSON.parse(query[0].data) as SessionData;
+      const data = query[0].data;
+      return JSON.parse(data as string) as SessionData;
     }
 
     return null;

@@ -4,26 +4,6 @@ type IncompletePaginationProps = {
   sector: "price" | "municipality" | "style";
 };
 
-function Pag() {
-  return (
-    <div className="flex items-center space-x-2 text-sm">
-      <button
-        disabled={false}
-        className="px-2 py-1 rounded bg-gray-200 text-gray-600 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
-      >
-        Prev
-      </button>
-      <span className="text-gray-600">1 / 3</span>
-      <button
-        disabled={false}
-        className="px-2 py-1 rounded bg-gray-200 text-gray-600 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
-      >
-        Next
-      </button>
-    </div>
-  );
-}
-
 export function Pagination(props: IncompletePaginationProps) {
   return (
     <div className="flex items-center space-x-2 text-sm">
