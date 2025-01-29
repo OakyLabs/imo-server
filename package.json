@@ -6,6 +6,7 @@
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
+    "@clack/prompts": "^0.9.1",
     "@hono/zod-validator": "^0.4.2",
     "@libsql/client": "^0.14.0",
     "@types/node": "^22.10.7",
