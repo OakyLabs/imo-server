@@ -90,7 +90,7 @@ export const concelhosRelations = relations(
       references: [districts_table.id],
     }),
     properties: many(properties_table),
-  }),
+  })
 );
 
 export const distritosRelations = relations(districts_table, ({ many }) => ({
