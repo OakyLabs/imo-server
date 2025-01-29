@@ -23,7 +23,8 @@ import { PriceIncomplete } from "./pages/back-office/manual-edit/price-incomplet
 import { StyleIncomplete } from "./pages/back-office/manual-edit/style-incomplete.form";
 import { MunicipalityIncomplete } from "./pages/back-office/manual-edit/municipality-incomplete.form";
 import { ManageWeb } from "./pages/back-office/manage-websites/manage-websites";
-import { login_form_validator } from "./routers/back-office/login-validator";
+import { login_form_validator } from "./routers/back-office/login/login-validator";
+import { login } from "./routers/back-office/login/login-use-case";
 
 const salt_rounds = 10;
 
@@ -45,16 +46,16 @@ back_office_router.get("/login", async (c) => {
   return c.html(
     <Layout>
       <BackOfficeLogin error={{ email: undefined, password: undefined }} />
-    </Layout>
+    </Layout>,
   );
 });
 
 back_office_router.post("/login", login_form_validator, async (c) => {
   const body = c.req.valid("form");
 
-  const salt = await genSalt(salt_rounds);
+  const db = create_db(c.env);
 
-  const _hashed_password = await hash(body.password, salt);
+  await login(body, db);
 
   const session = c.get("session");
 
@@ -106,8 +107,8 @@ back_office_router.get("/dashboard", admin_logged_in_mw, async (c) => {
         and(
           isNotNull(properties_table.price),
           isNotNull(properties_table.concelho_id),
-          isNotNull(properties_table.style_lookup_id)
-        )
+          isNotNull(properties_table.style_lookup_id),
+        ),
       ),
     db
       .select({ count: count() })
@@ -116,8 +117,8 @@ back_office_router.get("/dashboard", admin_logged_in_mw, async (c) => {
         or(
           isNull(properties_table.price),
           isNull(properties_table.concelho_id),
-          isNull(properties_table.style_lookup_id)
-        )
+          isNull(properties_table.style_lookup_id),
+        ),
       ),
     db
       .select({
@@ -144,7 +145,7 @@ back_office_router.get("/dashboard", admin_logged_in_mw, async (c) => {
         is_on={scraper_info[0].value === "true"}
         last_changed={scraper_info[0].updated_at}
       />
-    </Layout>
+    </Layout>,
   );
 });
 
@@ -171,7 +172,7 @@ back_office_router.get("/municipalities", admin_logged_in_mw, async (c) => {
             {municipality.name}
           </option>
         ))}
-      </>
+      </>,
     );
   }
 
@@ -180,7 +181,7 @@ back_office_router.get("/municipalities", admin_logged_in_mw, async (c) => {
     .from(concelhos_table)
     .leftJoin(
       districts_table,
-      eq(concelhos_table.distrito_id, districts_table.id)
+      eq(concelhos_table.distrito_id, districts_table.id),
     )
     .where(eq(districts_table.name, query));
 
@@ -194,7 +195,7 @@ back_office_router.get("/municipalities", admin_logged_in_mw, async (c) => {
           {municipality.name}
         </option>
       ))}
-    </>
+    </>,
   );
 });
 
@@ -271,7 +272,7 @@ back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
         curr_page: 1,
         total_pages: Math.ceil(style_amount / 10),
       }}
-    />
+    />,
   );
 });
 
@@ -322,7 +323,7 @@ back_office_router.post(
       .where(eq(properties_table.id, param));
 
     return c.redirect("/back-office/manual");
-  }
+  },
 );
 
 back_office_router.post(
@@ -364,7 +365,7 @@ back_office_router.post(
       .where(eq(properties_table.id, param));
 
     return c.redirect("/back-office/manual");
-  }
+  },
 );
 
 back_office_router.post(
@@ -416,7 +417,7 @@ back_office_router.post(
       .where(eq(properties_table.id, param));
 
     return c.redirect("/back-office/manual");
-  }
+  },
 );
 
 back_office_router.post(
@@ -443,7 +444,7 @@ back_office_router.post(
       .values({ name: body.name, link: body.website, use: false });
 
     return c.redirect("/back-office/dashboard");
-  }
+  },
 );
 
 back_office_router.get(
@@ -471,8 +472,8 @@ back_office_router.get(
       sector === "price"
         ? properties_table.price
         : sector === "style"
-        ? properties_table.style_lookup_id
-        : properties_table.concelho_id;
+          ? properties_table.style_lookup_id
+          : properties_table.concelho_id;
 
     const table = await db
       .select()
@@ -494,7 +495,7 @@ back_office_router.get(
           curr_page={page}
           total_pages={total_pages}
           incomplete_properties={table}
-        />
+        />,
       );
     }
 
@@ -506,7 +507,7 @@ back_office_router.get(
           total_pages={total_pages}
           incomplete_properties={table}
           all_styles={all_styles}
-        />
+        />,
       );
     }
 
@@ -524,9 +525,9 @@ back_office_router.get(
         incomplete_properties={table}
         municipalities={municipalities}
         districts={districts}
-      />
+      />,
     );
-  }
+  },
 );
 
 back_office_router.get("/manage-services", admin_logged_in_mw, async (c) => {
@@ -542,14 +543,7 @@ back_office_router.get("/manage-services", admin_logged_in_mw, async (c) => {
     .from(service_table)
     .leftJoin(
       properties_table,
-      eq(service_table.id, properties_table.service_id)
-    )
-    .where(
-      and(
-        isNotNull(properties_table.concelho_id),
-        isNotNull(properties_table.price),
-        isNotNull(properties_table.style_lookup_id)
-      )
+      eq(service_table.id, properties_table.service_id),
     )
     .groupBy(service_table.id)
     .orderBy(service_table.id);
@@ -593,7 +587,7 @@ back_office_router.get(
     }
 
     return c.body(null);
-  }
+  },
 );
 
 export { back_office_router };

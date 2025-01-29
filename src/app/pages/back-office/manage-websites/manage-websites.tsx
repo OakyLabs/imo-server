@@ -58,17 +58,9 @@ export function ManageWeb({
                       {website.auction_count}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                      <select className="border rounded px-2 py-1 text-sm">
-                        <option value="active" selected={website.use === true}>
-                          Active
-                        </option>
-                        <option
-                          value="inactive"
-                          selected={website.use === false}
-                        >
-                          Inactive
-                        </option>
-                      </select>
+                      <span class="border rounded px-2 py-1 text-sm">
+                        {website.use ? "Active" : "Inactive"}
+                      </span>
                     </td>
                   </tr>
                 ))}
