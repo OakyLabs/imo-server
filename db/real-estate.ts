@@ -13,3 +13,14 @@ export enum RealEstate {
   DireitoAHeranca,
   DireitoDeUsufruto,
 }
+
+export enum WebsiteStatus {
+  Offline = 1,
+  Online,
+  Todo,
+}
+
+export enum PropertyAdStatus {
+  Useful = 1,
+  Discarded,
+}
