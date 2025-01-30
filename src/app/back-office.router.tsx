@@ -15,7 +15,7 @@ import {
 } from "../../db/schema";
 import { createMiddleware } from "hono/factory";
 import { create_db } from "../../db";
-import { and, count, eq, isNotNull, isNull, like, or } from "drizzle-orm";
+import { and, count, desc, eq, isNotNull, isNull, like, or } from "drizzle-orm";
 import { Dashboard } from "./pages/back-office/dashboard/dashboard";
 import { ManualEdit } from "./pages/back-office/manual-edit/manual-edit-form.page";
 import { BackOfficeLogin } from "./pages/back-office/login/login";
@@ -25,8 +25,6 @@ import { MunicipalityIncomplete } from "./pages/back-office/manual-edit/municipa
 import { ManageWeb } from "./pages/back-office/manage-websites/manage-websites";
 import { login_form_validator } from "./routers/back-office/login/login-validator";
 import { login } from "./routers/back-office/login/login-use-case";
-
-const salt_rounds = 10;
 
 const back_office_router = new Hono<AppBindings>();
 
@@ -546,7 +544,7 @@ back_office_router.get("/manage-services", admin_logged_in_mw, async (c) => {
       eq(service_table.id, properties_table.service_id),
     )
     .groupBy(service_table.id)
-    .orderBy(service_table.id);
+    .orderBy((fields) => desc(fields.auction_count));
 
   return c.html(<ManageWeb services={list} />);
 });

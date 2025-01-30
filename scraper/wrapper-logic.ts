@@ -10,7 +10,6 @@ import { async_storage } from "./config/local-storage";
 import { wait_for_execution } from "./config/wrapper";
 import { SCRAPERS } from "./scrapers";
 import { parsed_flags } from "./config/cli";
-import {} from "@cl";
 
 const user_agent =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36";

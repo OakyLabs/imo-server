@@ -6,7 +6,7 @@ import {
   ParsingErrorV1,
 } from "../events/errors/parsing-error";
 import { parse_style } from "../lib/parse-style";
-import { resolve_url } from "../lib/helpers";
+import { get_text, resolve_url } from "../lib/helpers";
 
 const url =
   "https://www.caixaimobiliario.pt/comprar/imoveis-venda.jsp?op=comprar&pgnr=1&ofs=0&rsnr=&pgsz=-1&listing=resumo&ordby=preco_desc&dc=0&tptpl=0&pcmax=0&pcmin=-1&f=0&armin=0";
@@ -117,12 +117,26 @@ export const scrape_caixa = scrape_main(async ({ logger, page, service }) => {
       return;
     }
 
+    // For some reason, the url has several search params that might impact where the ad was and it creates a new property even though no property ad had been actually created
+    const new_url = new URL(
+      resolve_url("https://www.caixaimobiliario.pt/", link),
+    );
+
+    const keys_to_delete: Array<string> = [];
+    new_url.searchParams.forEach((_, key) => {
+      if (key !== "id") {
+        keys_to_delete.push(key);
+      }
+    });
+
+    keys_to_delete.forEach((key) => new_url.searchParams.delete(key));
+
     const price = await section
       .$("b")
       .then((r) => r?.textContent())
       .then((r) => r?.trim() ?? null);
 
-    const title = await link_el.textContent();
+    const title = await get_text(link_el);
 
     if (!title) {
       on.error({
@@ -144,12 +158,12 @@ export const scrape_caixa = scrape_main(async ({ logger, page, service }) => {
     on.property(
       {
         title,
-        url: resolve_url("https://www.caixaimobiliario.pt/", link),
+        url: new_url.toString(),
         concelho_id,
         price,
         style_lookup_id: style,
       },
-      service
+      service,
     );
   }
 });
