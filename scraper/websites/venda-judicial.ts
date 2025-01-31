@@ -3,6 +3,7 @@ import { get_on_methods } from "../config/local-storage";
 import { scrape_many, EnqueueHandler } from "../config/wrapper";
 import { ParsingErrorV1 } from "../events/errors/parsing-error";
 import { parse_style } from "../lib/parse-style";
+import { get_text } from "../lib/helpers";
 
 const URLS = {
   imoveis: "https://vendajudicial.pt/bens-imoveis/",
@@ -52,14 +53,14 @@ export const scrape_venda_judicial = scrape_many(URLS, async (props) => {
 
     const description = item.locator(".mkd-post-excerpt");
 
-    const price_amount = extract_euro_amount(
-      (await description.textContent()) ?? ""
-    );
+    //const price_amount = extract_euro_amount(
+    //  (await description.textContent()) ?? "",
+    //);
 
     enqueue_links({
       link: href,
       service,
-      handler: enqueue_venda_judicial(price_amount),
+      handler: enqueue_venda_judicial(null),
     });
   }
 });
@@ -73,7 +74,7 @@ function extract_euro_amount(input: string): string | null {
 }
 
 const enqueue_venda_judicial =
-  (price: string | null): EnqueueHandler =>
+  (_price: string | null): EnqueueHandler =>
   async ({ link, page, service }) => {
     const on = get_on_methods();
     const title = await page
@@ -98,9 +99,29 @@ const enqueue_venda_judicial =
 
     const style = parse_style(title);
 
+    const price_section = page
+      .locator('.mkd-post-text-inner *:has-text("€")')
+      .first();
+
+    const price_count = await price_section.count();
+
+    let price: string | null = "Não listado";
+
+    if (price_count) {
+      const price_string = await get_text(price_section);
+
+      if (price_string) {
+        const split = price_string.split(":").map((e) => e.trim());
+
+        if (split.length === 2) {
+          price = split.at(1) ?? null;
+        }
+      }
+    }
+
     on.property(
       { title, url: link, price, style_lookup_id: style, concelho_id: null },
-      service
+      service,
     );
   };
 
@@ -109,3 +130,5 @@ async function check_is_empty(page: Page) {
 
   return elements === 0;
 }
+
+export async function not_found(page: Page) {}

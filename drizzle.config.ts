@@ -5,7 +5,7 @@ import { parse_env } from "./src/env";
 const env = parse_env(process.env);
 
 export default defineConfig({
-  schema: "./src/db/schema.ts",
+  schema: "./db/schema.ts",
   out: "./drizzle",
   dialect: "turso",
   dbCredentials: {

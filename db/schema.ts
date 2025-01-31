@@ -57,6 +57,7 @@ export const properties_table = sqliteTable("properties", {
     .$defaultFn(() => new Date())
     .$onUpdate(() => new Date())
     .notNull(),
+  discarded: integer({ mode: "boolean" }).default(false).notNull(),
 });
 
 export type DbProperty = InferSelectModel<typeof properties_table>;
@@ -90,7 +91,7 @@ export const concelhosRelations = relations(
       references: [districts_table.id],
     }),
     properties: many(properties_table),
-  })
+  }),
 );
 
 export const distritosRelations = relations(districts_table, ({ many }) => ({

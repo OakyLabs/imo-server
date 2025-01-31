@@ -1,0 +1,1 @@
+ALTER TABLE `properties` ADD `discarded` integer DEFAULT false NOT NULL;

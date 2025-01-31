@@ -25,6 +25,10 @@ import { MunicipalityIncomplete } from "./pages/back-office/manual-edit/municipa
 import { ManageWeb } from "./pages/back-office/manage-websites/manage-websites";
 import { login_form_validator } from "./routers/back-office/login/login-validator";
 import { login } from "./routers/back-office/login/login-use-case";
+import { tuple } from "../../scraper/lib/object-keys";
+import { Properties } from "../modules/db/properties";
+import { Style } from "hono/css";
+import { Styles } from "../modules/db/style_lookup";
 
 const back_office_router = new Hono<AppBindings>();
 
@@ -214,7 +218,12 @@ back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
     db
       .select()
       .from(properties_table)
-      .where(isNull(properties_table.price))
+      .where(
+        and(
+          isNull(properties_table.price),
+          eq(properties_table.service_id, 17),
+        ),
+      )
       .limit(10),
     db
       .select()
@@ -224,7 +233,12 @@ back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
     db
       .select()
       .from(properties_table)
-      .where(isNull(properties_table.style_lookup_id))
+      .where(
+        and(
+          isNull(properties_table.style_lookup_id),
+          eq(properties_table.discarded, false),
+        ),
+      )
       .limit(10),
     db.select().from(style_lookup_table),
     db.select().from(districts_table),
@@ -585,6 +599,126 @@ back_office_router.get(
     }
 
     return c.body(null);
+  },
+);
+
+back_office_router.post(
+  "/save/stuff",
+  admin_logged_in_mw,
+  validator("form", (value) => {
+    return z.record(z.string(), z.string()).safeParse(value);
+  }),
+  async (c) => {
+    const { success, data } = c.req.valid("form");
+    const db = create_db(c.env);
+
+    if (!success) {
+      const [style, all_styles, [{ count: style_amount }]] = await Promise.all([
+        db
+          .select()
+          .from(properties_table)
+          .where(isNull(properties_table.style_lookup_id))
+          .limit(10),
+        db.select().from(style_lookup_table),
+        db
+          .select({ count: count() })
+          .from(properties_table)
+          .where(isNull(properties_table.style_lookup_id)),
+      ]);
+      return c.html(
+        <StyleIncomplete
+          curr_page={1}
+          total_pages={Math.ceil(style_amount / 10)}
+          all_styles={all_styles}
+          incomplete_properties={style}
+        />,
+      );
+    }
+
+    const entries = Object.entries(data)
+      .filter(([, value]) => value)
+      .map(([key, value]) => {
+        return [Number(key.split("-")[1]), +value];
+      });
+
+    await db.transaction(async (tx) => {
+      await Promise.all(
+        entries.map(async ([id, real_estate]) => {
+          await tx
+            .update(properties_table)
+            .set({ style_lookup_id: real_estate })
+            .where(eq(properties_table.id, id));
+        }),
+      );
+    });
+
+    const [style, all_styles, [{ count: style_amount }]] = await Promise.all([
+      db
+        .select()
+        .from(properties_table)
+        .where(isNull(properties_table.style_lookup_id))
+        .limit(10),
+      db.select().from(style_lookup_table),
+      db
+        .select({ count: count() })
+        .from(properties_table)
+        .where(isNull(properties_table.style_lookup_id)),
+    ]);
+
+    return c.html(
+      <StyleIncomplete
+        curr_page={1}
+        total_pages={Math.ceil(style_amount / 10)}
+        all_styles={all_styles}
+        incomplete_properties={style}
+      />,
+    );
+  },
+);
+
+back_office_router.post(
+  "/manual/discard/:param",
+  admin_logged_in_mw,
+  validator("param", (value, c) => {
+    return z.object({ param: z.coerce.number() }).safeParse(value);
+  }),
+  async (c) => {
+    const { success, data } = c.req.valid("param");
+    const db = create_db(c.env);
+
+    if (!success) {
+      const [{ style_missing_properties_count, properties }, style] =
+        await Promise.all([
+          Properties.get_manual_and_style_list(db),
+          Styles.get_styles(db),
+        ]);
+
+      return c.html(
+        <StyleIncomplete
+          curr_page={1}
+          total_pages={Math.ceil(style_missing_properties_count / 10)}
+          all_styles={style}
+          incomplete_properties={properties}
+        />,
+      );
+    }
+
+    await Properties.discard(db, data.param);
+
+    const [{ style_missing_properties_count, properties }, style] =
+      await Promise.all([
+        Properties.get_manual_and_style_list(db),
+        Styles.get_styles(db),
+      ]);
+
+    return c.html(
+      <StyleIncomplete
+        curr_page={1}
+        total_pages={Math.ceil(style_missing_properties_count / 10)}
+        all_styles={style}
+        incomplete_properties={properties}
+      />,
+    );
   },
 );
 

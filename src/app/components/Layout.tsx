@@ -9,11 +9,32 @@ export function Layout({ children }: { children: Child }) {
         <title>ImoExclusivo</title>
         <link rel="stylesheet" href="/css/style.css" />
         <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+        <script
+          defer
+          src="https://cdn.jsdelivr.net/npm/@alpinejs/focus@3.x.x/dist/cdn.min.js"
+        ></script>
         <script src="//unpkg.com/alpinejs" defer></script>
       </head>
-      <body>
+      <body
+        x-data="{is_modal_open: false, body: '', title: '', bottom: '', close_modal() {this.is_modal_open = false; this.body = ''; this.bottom = ''}}"
+        {...{
+          "x-on:keydown.escape": "is_modal_open=false; body=''; title='';",
+        }}
+      >
         <div class="min-h-screen flex flex-col">
           <Nav />
+          <div
+            x-cloak
+            x-show="is_modal_open"
+            {...{ "x-on:click.self": "is_modal_open = false" }}
+            class="fixed inset-0 flex justify-center items-center bg-opacity-50 bg-gray-50"
+          >
+            <div class="bg-white p-5 rounded-lg w-1/2 opacity-100 text-center">
+              <h2 className="text-xl font-bold" x-text="title"></h2>
+              <p className="mt-2" x-text="body"></p>
+              <div x-html="bottom"></div>
+            </div>
+          </div>
           <main class="flex-grow">{children}</main>
           <Footer />
         </div>

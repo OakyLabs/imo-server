@@ -18,30 +18,33 @@ export function StyleIncomplete(props: StyleIncompleteProps) {
         <h2 className="text-xl font-semibold">Classificação de Propriedade</h2>
         <Pagination {...props} sector="style" />
       </div>
-      <div>
-        <ul className="space-y-4">
-          {props.incomplete_properties.map((listing) => (
-            <li
-              key={listing.id}
-              className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4"
-            >
-              <div className="flex-grow">
-                <a
-                  href={listing.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="inline-flex items-center text-blue-600 hover:text-blue-800"
-                >
-                  <span class="mr-2">{listing.title}</span>
-                  {/*<ExternalLink class="w-4 h-4" /> */}
-                </a>
-              </div>
-              <form
-                class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4"
-                method="post"
-                action={`/back-office/save/style/${listing.id}`}
+      <div x-data="{filled: false}">
+        <form
+          hx-post="/back-office/save/stuff"
+          hx-target="#style_listing"
+          hx-swap="outerHTML"
+          x-on:input="filled = [...$el.querySelectorAll('select')].some(s => s.value)"
+        >
+          <ul className="space-y-4">
+            {props.incomplete_properties.map((listing) => (
+              <li
+                key={listing.id}
+                className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4"
               >
-                <select className="border rounded px-2 py-1" name="style">
+                <div className="flex-grow">
+                  <a
+                    href={listing.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center text-blue-600 hover:text-blue-800"
+                  >
+                    <span class="mr-2">{listing.title}</span>
+                  </a>
+                </div>
+                <select
+                  className="border rounded px-2 py-1"
+                  name={`style-${listing.id}`}
+                >
                   <option value="">Selectionar Estilo de Propriedade</option>
                   {props.all_styles.map((type) => (
                     <option key={type} value={type.id}>
@@ -49,17 +52,25 @@ export function StyleIncomplete(props: StyleIncompleteProps) {
                     </option>
                   ))}
                 </select>
-
                 <button
-                  type="submit"
-                  class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                  type="button"
+                  x-on:click={`is_modal_open=true; title = 'Descartar anúncio?'; bottom= '<div class="mt-5 flex justify-between gap-2 w-1/4 mx-auto" x-init="$nextTick(() => {htmx.process($el)})"><button type="button" hx-post="/back-office/manual/discard/${listing.id}" @htmx:after-request="close_modal()" hx-swap="outerHTML" hx-target="#style_listing" class="bg-green-500 py-1 px-2 rounded-md min-w-20 text-gray-100">Sim</button><button class="bg-red-400 rounded-md py-1 px-2 text-gray-100 min-w-20" x-on:click="is_modal_open = false;">Cancelar</button></div>'`}
                 >
-                  Gravar
+                  Discartar
                 </button>
-              </form>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+
+          <button
+            type="submit"
+            class="text-white px-3 py-1 mt-2 rounded "
+            x-bind:class="filled ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-500 cursor-not-allowed'"
+            x-bind:disabled="!filled"
+          >
+            Gravar todos
+          </button>
+        </form>
       </div>
     </div>
   );

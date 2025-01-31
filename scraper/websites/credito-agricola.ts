@@ -165,7 +165,7 @@ export const scrape_credito_agricola = scrape_main(
           }
 
           const title = to_pascal_case(
-            await title_el.textContent().then((r) => r?.trim() ?? "")
+            await title_el.textContent().then((r) => r?.trim() ?? ""),
           ).trim();
 
           if (!title) {
@@ -209,10 +209,10 @@ export const scrape_credito_agricola = scrape_main(
               price,
               style_lookup_id: style,
             },
-            service
+            service,
           );
         }
-      }
+      },
     );
-  }
+  },
 );

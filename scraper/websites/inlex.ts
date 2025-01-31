@@ -82,7 +82,7 @@ export const scrape_inlex = scrape_many(
           {
             url,
             message: "No location in the current property",
-          }
+          },
         );
 
         continue;
@@ -114,7 +114,7 @@ export const scrape_inlex = scrape_many(
 
       //   console.log("location_trimmed:", location_trimmed);
     }
-  }
+  },
 );
 
 const enqueue_inlex =
@@ -148,8 +148,8 @@ const enqueue_inlex =
         url: link,
         concelho_id: concelho,
         style_lookup_id: style,
-        price: null,
+        price: "Não listado",
       },
-      service
+      service,
     );
   };
