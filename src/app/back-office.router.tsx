@@ -222,13 +222,19 @@ back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
         and(
           isNull(properties_table.price),
           eq(properties_table.service_id, 17),
+          eq(properties_table.discarded, false),
         ),
       )
       .limit(10),
     db
       .select()
       .from(properties_table)
-      .where(isNull(properties_table.concelho_id))
+      .where(
+        and(
+          isNull(properties_table.concelho_id),
+          eq(properties_table.discarded, false),
+        ),
+      )
       .limit(10),
     db
       .select()
@@ -617,13 +623,23 @@ back_office_router.post(
         db
           .select()
           .from(properties_table)
-          .where(isNull(properties_table.style_lookup_id))
+          .where(
+            and(
+              isNull(properties_table.style_lookup_id),
+              eq(properties_table.discarded, false),
+            ),
+          )
           .limit(10),
         db.select().from(style_lookup_table),
         db
           .select({ count: count() })
           .from(properties_table)
-          .where(isNull(properties_table.style_lookup_id)),
+          .where(
+            and(
+              isNull(properties_table.style_lookup_id),
+              eq(properties_table.discarded, false),
+            ),
+          ),
       ]);
       return c.html(
         <StyleIncomplete
@@ -656,13 +672,23 @@ back_office_router.post(
       db
         .select()
         .from(properties_table)
-        .where(isNull(properties_table.style_lookup_id))
+        .where(
+          and(
+            isNull(properties_table.style_lookup_id),
+            eq(properties_table.discarded, false),
+          ),
+        )
         .limit(10),
       db.select().from(style_lookup_table),
       db
         .select({ count: count() })
         .from(properties_table)
-        .where(isNull(properties_table.style_lookup_id)),
+        .where(
+          and(
+            isNull(properties_table.style_lookup_id),
+            eq(properties_table.discarded, false),
+          ),
+        ),
     ]);
 
     return c.html(

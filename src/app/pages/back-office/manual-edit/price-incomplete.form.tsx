@@ -29,9 +29,9 @@ export function PriceIncomplete(props: PriceIncompleteProps) {
                   href={listing.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="inline-flex items-center text-blue-600 hover:text-blue-800"
+                  class="inline-flex items-center text-blue-600 hover:text-blue-800 max-w-7 mr-2 overflow-hidden truncate"
                 >
-                  <span class="mr-2 overflow-hidden truncate max-w-md">
+                  <span class="mr-2 overflow-hidden truncate lg:max-w-md max-w-7">
                     {listing.title}
                   </span>
                   {/*<ExternalLink class="w-4 h-4" /> */}

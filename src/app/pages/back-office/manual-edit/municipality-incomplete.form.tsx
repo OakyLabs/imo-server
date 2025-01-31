@@ -37,9 +37,7 @@ export function MunicipalityIncomplete(props: MunicipalityIncompleteProps) {
                   rel="noopener noreferrer"
                   class="inline-flex items-center text-blue-600 hover:text-blue-800"
                 >
-                  <span class="mr-2 overflow-hidden truncate max-w-sm">
-                    {listing.title}
-                  </span>
+                  <span class="mr-2 overflow-hidden ">{listing.title}</span>
                   {/*<ExternalLink class="w-4 h-4" /> */}
                 </a>
               </div>
@@ -54,7 +52,7 @@ export function MunicipalityIncomplete(props: MunicipalityIncompleteProps) {
                   hx-get="/back-office/municipalities"
                   hx-trigger="change"
                   hx-target={`#municipalities-${encodeURIComponent(
-                    listing.id
+                    listing.id,
                   )}`}
                   hx-swap="innerHTML"
                 >
