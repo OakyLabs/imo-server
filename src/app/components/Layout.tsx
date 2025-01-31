@@ -27,9 +27,9 @@ export function Layout({ children }: { children: Child }) {
             x-cloak
             x-show="is_modal_open"
             {...{ "x-on:click.self": "is_modal_open = false" }}
-            class="fixed inset-0 flex justify-center items-center bg-opacity-50 bg-gray-50"
+            class="fixed inset-0 flex justify-center items-center bg-opacity-80 bg-gray-600"
           >
-            <div class="bg-white p-5 rounded-lg w-1/2 opacity-100 text-center">
+            <div class="bg-white p-5 rounded-lg w-1/4 text-center">
               <h2 className="text-xl font-bold" x-text="title"></h2>
               <p className="mt-2" x-text="body"></p>
               <div x-html="bottom"></div>
