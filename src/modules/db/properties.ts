@@ -3,7 +3,7 @@ import { IDatabase } from "../../../db";
 import { DbProperty, properties_table } from "../../../db/schema";
 
 export namespace Properties {
-  export async function get_manual_and_style_list(db: IDatabase) {
+  export async function get_manual_and_style_list(db: IDatabase, offset = 0) {
     const [properties, [{ count: style_missing_properties_count }]] =
       await Promise.all([
         db
@@ -14,7 +14,9 @@ export namespace Properties {
               isNull(properties_table.style_lookup_id),
               eq(properties_table.discarded, false),
             ),
-          ),
+          )
+          .limit(10)
+          .offset(offset),
 
         db
           .select({ count: count() })
