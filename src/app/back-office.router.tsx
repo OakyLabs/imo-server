@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 import { AppBindings } from "../types";
-import { Layout } from "./components/Layout";
 import { z } from "zod";
 import { validator } from "hono/validator";
 import {
@@ -8,12 +7,10 @@ import {
   districts_table,
   properties_table,
   service_table,
-  sessions_table,
   style_lookup_table,
 } from "../../db/schema";
 import { create_db } from "../../db";
 import { and, count, desc, eq, isNull, like } from "drizzle-orm";
-import { Dashboard } from "./pages/back-office/dashboard/dashboard";
 import { ManualEdit } from "./pages/back-office/manual-edit/manual-edit-form.page";
 import { PriceIncomplete } from "./pages/back-office/manual-edit/price-incomplete.form";
 import { StyleIncomplete } from "./pages/back-office/manual-edit/style-incomplete.form";
@@ -22,12 +19,9 @@ import { ManageWeb } from "./pages/back-office/manage-websites/manage-websites";
 import { Properties } from "../modules/db/properties";
 import { Styles } from "../modules/db/style_lookup";
 import { admin_logged_in_mw } from "./middlewares/admin.middleware";
-import { Services } from "../modules/db/services";
-import { Caches } from "../modules/db/caches";
-import { Locations } from "../modules/db/location";
-import { MunicipalityOptions } from "./pages/back-office/manual-edit/municipality/municipality-options";
-import { login_router } from "./routers/back-office/login/routes";
-import { dashboard_router } from "./routers/back-office/dashboard/router";
+import { dashboard_router } from "./routers/back-office/dashboard/dashboard.router";
+import { bo_auth_router } from "./routers/back-office/auth/back-office-auth.router";
+import { manual_router } from "./routers/back-office/manual/manual.router";
 
 const back_office_router = new Hono<AppBindings>();
 
@@ -37,25 +31,15 @@ back_office_router.get("/", async (c) => {
   const session_id = session.get("session_id");
 
   if (!session_id) {
-    return c.redirect("/back-office/login");
+    return c.redirect("/back-office/auth/login");
   }
 
   return c.redirect("/back-office/dashboard");
 });
 
-back_office_router.route("/login", login_router);
+back_office_router.route("/auth", bo_auth_router);
 back_office_router.route("/dashboard", dashboard_router);
-
-// HTMX here
-back_office_router.get("/municipalities", admin_logged_in_mw, async (c) => {
-  const db = create_db(c.env);
-
-  const query = c.req.query("district");
-
-  const all_municipalities = await Locations.municipalities(db, query);
-
-  return c.html(<MunicipalityOptions municipalities={all_municipalities} />);
-});
+back_office_router.route("/manual", manual_router);
 
 back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
   const db = create_db(c.env);
@@ -423,45 +407,6 @@ back_office_router.get("/manage-services", admin_logged_in_mw, async (c) => {
 
   return c.html(<ManageWeb services={list} />);
 });
-
-back_office_router.get(
-  "/logout",
-  admin_logged_in_mw,
-  validator("query", (value, _c) => {
-    const parsed = z
-      .object({ all: z.literal("true").optional() })
-      .safeParse(value);
-
-    if (!parsed.success) {
-      return {
-        all: false,
-      };
-    }
-
-    return {
-      all: parsed.data.all === "true",
-    };
-  }),
-  async (c) => {
-    c.header("HX-Redirect", "/");
-    const { all } = c.req.valid("query");
-    const session = c.get("session");
-
-    const db = create_db(c.env);
-
-    const session_id = session.get("session_id");
-
-    if (all) {
-      await db
-        .delete(sessions_table)
-        .where(like(sessions_table.data, `%\\"value\\":\\"${session_id}\\"%`));
-    } else {
-      session.deleteSession();
-    }
-
-    return c.body(null);
-  },
-);
 
 back_office_router.post(
   "/save/municipality",

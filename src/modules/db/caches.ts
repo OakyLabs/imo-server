@@ -3,7 +3,7 @@ import { IDatabase } from "../../../db";
 import { cache_table } from "../../../db/schema";
 
 export namespace Caches {
-  export async function is_in_use_result(db: IDatabase) {
+  export async function scraper_info(db: IDatabase) {
     const result = await db
       .select({
         value: cache_table.value,

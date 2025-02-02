@@ -61,7 +61,7 @@ export function MunicipalityIncomplete(props: MunicipalityIncompleteProps) {
                 <select
                   class="border rounded px-2 py-1"
                   name="district"
-                  hx-get="/back-office/municipalities"
+                  hx-get="/back-office/manual/municipalities"
                   hx-trigger="change"
                   hx-target={`#municipalities-${encodeURIComponent(
                     listing.id,

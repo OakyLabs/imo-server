@@ -1,8 +1,7 @@
 import { Session } from "hono-sessions";
 import { Environment } from "./env";
 
-type SessionDataTypes = {
-  counter: number;
+export type SessionDataTypes = {
   session_id: string;
 };
 

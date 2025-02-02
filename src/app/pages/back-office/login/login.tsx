@@ -16,7 +16,11 @@ export function BackOfficeLogin(props: BackOfficeProps) {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px04 shadow sm:rounded-lg sm:px-10">
-          <form action="/back-office/login" method="post" class="space-y-6">
+          <form
+            action="/back-office/auth/login"
+            method="post"
+            class="space-y-6"
+          >
             <div>
               <label
                 for="email"
