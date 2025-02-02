@@ -1,11 +1,9 @@
 import { Hono } from "hono";
 import { AppBindings } from "../types";
 import { Layout } from "./components/Layout";
-import { genSalt, hash } from "bcryptjs";
 import { z } from "zod";
 import { validator } from "hono/validator";
 import {
-  cache_table,
   concelhos_table,
   districts_table,
   properties_table,
@@ -13,23 +11,23 @@ import {
   sessions_table,
   style_lookup_table,
 } from "../../db/schema";
-import { createMiddleware } from "hono/factory";
 import { create_db } from "../../db";
-import { and, count, desc, eq, isNotNull, isNull, like, or } from "drizzle-orm";
+import { and, count, desc, eq, isNull, like } from "drizzle-orm";
 import { Dashboard } from "./pages/back-office/dashboard/dashboard";
 import { ManualEdit } from "./pages/back-office/manual-edit/manual-edit-form.page";
-import { BackOfficeLogin } from "./pages/back-office/login/login";
 import { PriceIncomplete } from "./pages/back-office/manual-edit/price-incomplete.form";
 import { StyleIncomplete } from "./pages/back-office/manual-edit/style-incomplete.form";
-import { MunicipalityIncomplete } from "./pages/back-office/manual-edit/municipality-incomplete.form";
+import { MunicipalityIncomplete } from "./pages/back-office/manual-edit/municipality";
 import { ManageWeb } from "./pages/back-office/manage-websites/manage-websites";
-import { login_form_validator } from "./routers/back-office/login/login-validator";
-import { login } from "./routers/back-office/login/login-use-case";
-import { tuple } from "../../scraper/lib/object-keys";
 import { Properties } from "../modules/db/properties";
-import { Style } from "hono/css";
 import { Styles } from "../modules/db/style_lookup";
 import { admin_logged_in_mw } from "./middlewares/admin.middleware";
+import { Services } from "../modules/db/services";
+import { Caches } from "../modules/db/caches";
+import { Locations } from "../modules/db/location";
+import { MunicipalityOptions } from "./pages/back-office/manual-edit/municipality/municipality-options";
+import { login_router } from "./routers/back-office/login/routes";
+import { dashboard_router } from "./routers/back-office/dashboard/router";
 
 const back_office_router = new Hono<AppBindings>();
 
@@ -45,162 +43,18 @@ back_office_router.get("/", async (c) => {
   return c.redirect("/back-office/dashboard");
 });
 
-back_office_router.get("/login", async (c) => {
-  return c.html(
-    <Layout>
-      <BackOfficeLogin error={{ email: undefined, password: undefined }} />
-    </Layout>,
-  );
-});
-
-back_office_router.post("/login", login_form_validator, async (c) => {
-  const body = c.req.valid("form");
-
-  const db = create_db(c.env);
-
-  await login(body, db);
-
-  const session = c.get("session");
-
-  session.set("session_id", "3");
-
-  return c.redirect("/back-office/dashboard");
-});
-
-back_office_router.get("/dashboard", admin_logged_in_mw, async (c) => {
-  const db = create_db(c.env);
-
-  const [
-    offline,
-    online,
-    services,
-    properties_count,
-    incomplete,
-    scraper_info,
-  ] = await Promise.all([
-    db
-      .select({ count: count() })
-      .from(service_table)
-      .where(eq(service_table.use, false)),
-    db
-      .select({ count: count() })
-      .from(service_table)
-      .where(eq(service_table.use, true)),
-    db
-      .select({ name: service_table.name })
-      .from(service_table)
-      .limit(3)
-      .where(eq(service_table.use, true)),
-    db
-      .select({ count: count() })
-      .from(properties_table)
-      .where(
-        and(
-          isNotNull(properties_table.price),
-          isNotNull(properties_table.concelho_id),
-          isNotNull(properties_table.style_lookup_id),
-        ),
-      ),
-    db
-      .select({ count: count() })
-      .from(properties_table)
-      .where(
-        or(
-          isNull(properties_table.price),
-          isNull(properties_table.concelho_id),
-          isNull(properties_table.style_lookup_id),
-        ),
-      ),
-    db
-      .select({
-        value: cache_table.value,
-        updated_at: cache_table.updated_at,
-      })
-      .from(cache_table)
-      .where(eq(cache_table.key, "in_use")),
-  ]);
-
-  const up_services = online[0].count;
-  const down_services = offline[0].count;
-
-  return c.html(
-    <Layout>
-      <Dashboard
-        insuficient_data_count={incomplete[0].count}
-        services={services}
-        active_user_count={0}
-        total_correct_count={properties_count[0].count}
-        total_services={up_services + down_services}
-        up_services={up_services}
-        down_services={down_services}
-        is_on={scraper_info[0].value === "true"}
-        last_changed={scraper_info[0].updated_at}
-      />
-    </Layout>,
-  );
-});
-
-back_office_router.get("/concelhos", async (c) => {
-  const db = create_db(c.env);
-
-  const all = await db
-    .select({ id: concelhos_table.id, name: concelhos_table.name })
-    .from(concelhos_table)
-    .orderBy(concelhos_table.id);
-
-  return c.json(all);
-});
+back_office_router.route("/login", login_router);
+back_office_router.route("/dashboard", dashboard_router);
 
 // HTMX here
 back_office_router.get("/municipalities", admin_logged_in_mw, async (c) => {
   const db = create_db(c.env);
 
   const query = c.req.query("district");
-  console.log(query);
 
-  const all_municipalities_list = await db
-    .select({
-      name: concelhos_table.name,
-      id: concelhos_table.id,
-    })
-    .from(concelhos_table);
+  const all_municipalities = await Locations.municipalities(db, query);
 
-  if (!query) {
-    return c.html(
-      <>
-        <option disabled value="">
-          Select Municipality
-        </option>
-        {all_municipalities_list.map((municipality) => (
-          <option key={municipality.name} value={municipality.id}>
-            {municipality.name}
-          </option>
-        ))}
-      </>,
-    );
-  }
-
-  const all_concelhos = await db
-    .select({ name: concelhos_table.name, id: concelhos_table.id })
-    .from(concelhos_table)
-    .leftJoin(
-      districts_table,
-      eq(concelhos_table.distrito_id, districts_table.id),
-    )
-    .where(eq(districts_table.name, query));
-
-  return c.html(
-    <>
-      <option disabeld value="">
-        Selecionar concelho
-      </option>
-      {all_concelhos.map((municipality) => (
-        <option key={municipality.name} value={municipality.id}>
-          {municipality.name}
-        </option>
-      ))}
-    </>,
-  );
+  return c.html(<MunicipalityOptions municipalities={all_municipalities} />);
 });
 
 back_office_router.get("/manual", admin_logged_in_mw, async (c) => {

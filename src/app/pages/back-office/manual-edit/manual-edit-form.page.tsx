@@ -5,7 +5,7 @@ import {
   DbStyle,
 } from "../../../../../db/schema";
 import { Layout } from "../../../components/Layout";
-import { MunicipalityIncomplete } from "./municipality-incomplete.form";
+import { MunicipalityIncomplete } from "./municipality";
 import { PriceIncomplete } from "./price-incomplete.form";
 import { StyleIncomplete } from "./style-incomplete.form";
 

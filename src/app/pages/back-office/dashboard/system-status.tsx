@@ -1,4 +1,4 @@
-export function SystemStatus(props: { is_on: boolean; last_changed: Date }) {
+export function SystemStatus(props: { is_on: boolean; last_changed?: Date }) {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <div class="flex justify-between items-center mb-4">
@@ -33,9 +33,11 @@ export function SystemStatus(props: { is_on: boolean; last_changed: Date }) {
 
       <div className="flex justify-between items-center">
         <span className="text-sm font-medium">Last Changed:</span>
-        <span className="text-sm font-bold">
-          {props.last_changed.toLocaleString()}
-        </span>
+        {props.last_changed ? (
+          <span className="text-sm font-bold">
+            {props.last_changed.toLocaleString()}
+          </span>
+        ) : null}
       </div>
     </div>
   );
