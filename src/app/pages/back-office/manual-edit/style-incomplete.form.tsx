@@ -1,4 +1,5 @@
 import { DbProperty, DbStyle } from "../../../../../db/schema";
+import { IncompleteHeader } from "./incomplete-header";
 import { Pagination } from "./pagination";
 
 type StyleIncompleteProps = {
@@ -14,10 +15,12 @@ export function StyleIncomplete(props: StyleIncompleteProps) {
       class="bg-white shadow-md rounded-lg p-6 mb-8 max-w-7xl"
       id="style_listing"
     >
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Classificação de Propriedade</h2>
-        <Pagination {...props} sector="style" />
-      </div>
+      <IncompleteHeader
+        header_text="Classificação de Propriedade"
+        sector="style"
+        curr_page={props.curr_page}
+        total_pages={props.total_pages}
+      />
       <div x-data="{filled: false}">
         <form
           hx-post="/back-office/save/stuff"
@@ -42,7 +45,7 @@ export function StyleIncomplete(props: StyleIncompleteProps) {
                   </a>
                 </div>
                 <select
-                  className="border rounded px-2 py-1"
+                  className="border rounded px-2 py-1 "
                   name={`style-${listing.id}`}
                 >
                   <option value="">Selectionar Estilo de Propriedade</option>

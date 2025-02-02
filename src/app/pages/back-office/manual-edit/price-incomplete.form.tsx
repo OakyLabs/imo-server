@@ -1,4 +1,5 @@
 import { DbProperty } from "../../../../../db/schema";
+import { IncompleteHeader } from "./incomplete-header";
 import { Pagination } from "./pagination";
 
 type PriceIncompleteProps = {
@@ -13,10 +14,12 @@ export function PriceIncomplete(props: PriceIncompleteProps) {
       class="bg-white shadow-md rounded-lg p-6 mb-8 max-w-7xl"
       id="price_listing"
     >
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Preço em falta</h2>
-        <Pagination {...props} sector="price" />
-      </div>
+      <IncompleteHeader
+        header_text="Preço em falta"
+        sector="price"
+        curr_page={props.curr_page}
+        total_pages={props.total_pages}
+      />
       <div x-data="{filled: false}">
         <ul class="space-y-4">
           {props.incomplete_properties.map((listing) => (

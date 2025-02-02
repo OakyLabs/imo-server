@@ -29,6 +29,7 @@ import { tuple } from "../../scraper/lib/object-keys";
 import { Properties } from "../modules/db/properties";
 import { Style } from "hono/css";
 import { Styles } from "../modules/db/style_lookup";
+import { admin_logged_in_mw } from "./middlewares/admin.middleware";
 
 const back_office_router = new Hono<AppBindings>();
 
@@ -64,18 +65,6 @@ back_office_router.post("/login", login_form_validator, async (c) => {
   session.set("session_id", "3");
 
   return c.redirect("/back-office/dashboard");
-});
-
-const admin_logged_in_mw = createMiddleware(async (c, next) => {
-  const session = c.get("session");
-
-  const session_id = session.get("session_id");
-
-  if (!session_id) {
-    return c.redirect("/");
-  }
-
-  return next();
 });
 
 back_office_router.get("/dashboard", admin_logged_in_mw, async (c) => {
@@ -167,10 +156,12 @@ back_office_router.get("/municipalities", admin_logged_in_mw, async (c) => {
   const db = create_db(c.env);
 
   const query = c.req.query("district");
+  console.log(query);
 
   const all_municipalities_list = await db
     .select({
       name: concelhos_table.name,
+      id: concelhos_table.id,
     })
     .from(concelhos_table);
 
@@ -181,7 +172,7 @@ back_office_router.get("/municipalities", admin_logged_in_mw, async (c) => {
           Select Municipality
         </option>
         {all_municipalities_list.map((municipality) => (
-          <option key={municipality.name} value={municipality.name}>
+          <option key={municipality.name} value={municipality.id}>
             {municipality.name}
           </option>
         ))}
@@ -201,10 +192,10 @@ back_office_router.get("/municipalities", admin_logged_in_mw, async (c) => {
   return c.html(
     <>
       <option disabeld value="">
-        Select Municipality
+        Selecionar concelho
       </option>
       {all_concelhos.map((municipality) => (
-        <option key={municipality.name} value={municipality.name}>
+        <option key={municipality.name} value={municipality.id}>
           {municipality.name}
         </option>
       ))}
@@ -259,7 +250,7 @@ back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
     db.select().from(style_lookup_table),
     db.select().from(districts_table),
     db.query.concelhos_table.findMany({
-      with: { distrito: { columns: { name: true } } },
+      with: { distrito: { columns: { name: true, id: true } } },
     }),
 
     db
@@ -615,6 +606,107 @@ back_office_router.get(
     }
 
     return c.body(null);
+  },
+);
+
+back_office_router.post(
+  "/save/municipality",
+  admin_logged_in_mw,
+  validator("form", (value) => {
+    console.log({ value });
+    return z.record(z.string(), z.string()).safeParse(value);
+  }),
+  async (c) => {
+    const { success, data } = c.req.valid("form");
+    const db = create_db(c.env);
+    let districts = await db.select().from(districts_table);
+    let concelhos = await db.query.concelhos_table.findMany({
+      with: { distrito: { columns: { name: true } } },
+    });
+    let [{ count: municipalities_amount }] = await db
+      .select({ count: count() })
+      .from(properties_table)
+      .where(
+        and(
+          isNull(properties_table.concelho_id),
+          eq(properties_table.discarded, false),
+        ),
+      );
+
+    let municipality_incomplete = await db
+      .select()
+      .from(properties_table)
+      .where(
+        and(
+          isNull(properties_table.concelho_id),
+          eq(properties_table.discarded, false),
+        ),
+      )
+      .limit(10);
+
+    if (!success) {
+      return c.html(
+        <MunicipalityIncomplete
+          districts={districts}
+          municipalities={concelhos}
+          curr_page={1}
+          total_pages={Math.ceil(municipalities_amount / 10)}
+          incomplete_properties={municipality_incomplete}
+        />,
+      );
+    }
+
+    const entries = Object.entries(data)
+      .filter(([, value]) => value)
+      .map(([key, value]) => {
+        return [Number(key.split("-")[1]), +value];
+      });
+
+    await db.transaction(async (tx) => {
+      await Promise.all(
+        entries.map(async ([id, municipality_id]) => {
+          await tx
+            .update(properties_table)
+            .set({ concelho_id: municipality_id })
+            .where(eq(properties_table.id, id));
+        }),
+      );
+    });
+
+    districts = await db.select().from(districts_table);
+    concelhos = await db.query.concelhos_table.findMany({
+      with: { distrito: { columns: { name: true } } },
+    });
+    [{ count: municipalities_amount }] = await db
+      .select({ count: count() })
+      .from(properties_table)
+      .where(
+        and(
+          isNull(properties_table.concelho_id),
+          eq(properties_table.discarded, false),
+        ),
+      );
+
+    municipality_incomplete = await db
+      .select()
+      .from(properties_table)
+      .where(
+        and(
+          isNull(properties_table.concelho_id),
+          eq(properties_table.discarded, false),
+        ),
+      )
+      .limit(10);
+
+    return c.html(
+      <MunicipalityIncomplete
+        incomplete_properties={municipality_incomplete}
+        total_pages={Math.ceil(municipalities_amount / 10)}
+        curr_page={1}
+        municipalities={concelhos}
+        districts={districts}
+      />,
+    );
   },
 );
 
