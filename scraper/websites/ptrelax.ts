@@ -1,6 +1,7 @@
 import { get_on_methods } from "../config/local-storage";
 import { scrape_many, EnqueueHandler } from "../config/wrapper";
 import { common_parsing_errors } from "../events/errors/parsing-error";
+import { get_text } from "../lib/helpers";
 import { parse_style } from "../lib/parse-style";
 
 const URLS = {
@@ -51,6 +52,12 @@ export const scrape_pt_relax = scrape_many(URLS, async (p) => {
           continue;
         }
 
+        const winning_selector = item.locator("span.winning_bid");
+
+        if (await winning_selector.count()) {
+          continue;
+        }
+
         const link = item.locator("a[href]").first();
 
         const link_amount = await link.count();
@@ -85,7 +92,7 @@ export const scrape_pt_relax = scrape_many(URLS, async (p) => {
 
         enqueue_links({ handler: enqueue_ptrelax, link: href, service });
       }
-    }
+    },
   );
 });
 
@@ -106,7 +113,7 @@ const enqueue_ptrelax: EnqueueHandler = async ({ link, page, service }) => {
     return;
   }
 
-  const title = await title_el.textContent().then((r) => r?.trim());
+  const title = await get_text(title_el);
 
   if (!title) {
     on.error({
@@ -121,21 +128,18 @@ const enqueue_ptrelax: EnqueueHandler = async ({ link, page, service }) => {
     return;
   }
 
-  const price_section = page.locator('p:has-text("Valor mínimo")');
+  const price_section = page.locator(".price bdi").first();
 
   let price: string | null = null;
 
   if (await price_section.count()) {
-    price =
-      (await price_section
-        .textContent()
-        .then((r) => r?.split("-").map((e) => e.trim())[1])) ?? null;
+    price = await get_text(price_section);
   }
 
   const style = parse_style(title);
 
   on.property(
     { concelho_id: null, price, style_lookup_id: style, title, url: link },
-    service
+    service,
   );
 };

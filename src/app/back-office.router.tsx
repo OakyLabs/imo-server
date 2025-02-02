@@ -151,6 +151,17 @@ back_office_router.get("/dashboard", admin_logged_in_mw, async (c) => {
   );
 });
 
+back_office_router.get("/concelhos", async (c) => {
+  const db = create_db(c.env);
+
+  const all = await db
+    .select({ id: concelhos_table.id, name: concelhos_table.name })
+    .from(concelhos_table)
+    .orderBy(concelhos_table.id);
+
+  return c.json(all);
+});
+
 // HTMX here
 back_office_router.get("/municipalities", admin_logged_in_mw, async (c) => {
   const db = create_db(c.env);
@@ -221,7 +232,6 @@ back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
       .where(
         and(
           isNull(properties_table.price),
-          eq(properties_table.service_id, 17),
           eq(properties_table.discarded, false),
         ),
       )
@@ -705,7 +715,7 @@ back_office_router.post(
 back_office_router.post(
   "/manual/discard/:param",
   admin_logged_in_mw,
-  validator("param", (value, c) => {
+  validator("param", (value) => {
     return z.object({ param: z.coerce.number() }).safeParse(value);
   }),
   async (c) => {

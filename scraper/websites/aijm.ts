@@ -127,7 +127,7 @@ export const scrape_aijm = scrape_main(
         await page.waitForLoadState("networkidle");
       }
     }
-  }
+  },
 );
 
 const enqueue_aijm =
@@ -137,7 +137,7 @@ const enqueue_aijm =
     const concelhos = get_concelhos();
 
     const base_locator = await page.$(
-      'section.well1 .row p:has-text("Concelho:")'
+      'section.well1 .row p:has-text("Concelho:")',
     );
     const text = await base_locator?.textContent();
 
@@ -157,7 +157,7 @@ const enqueue_aijm =
       .$('.well1 h3:has-text("Valor M")')
       .then((r) => r?.textContent());
 
-    let price: string | null = null;
+    let price = "Não listado";
     if (price_el) {
       const regex = /Valor Mínimo:\s*([\d\s,]+[€]?)$/;
 
@@ -179,6 +179,6 @@ const enqueue_aijm =
         style_lookup_id: style,
         price,
       },
-      service
+      service,
     );
   };

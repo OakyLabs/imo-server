@@ -29,7 +29,7 @@ export function StyleIncomplete(props: StyleIncompleteProps) {
             {props.incomplete_properties.map((listing) => (
               <li
                 key={listing.id}
-                className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4"
+                class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4"
               >
                 <div className="flex-grow">
                   <a
@@ -53,6 +53,7 @@ export function StyleIncomplete(props: StyleIncompleteProps) {
                   ))}
                 </select>
                 <button
+                  // https://github.com/alpinejs/alpine/discussions/4069 explanation about htmx:after-request
                   type="button"
                   x-on:click={`is_modal_open=true; title = 'Descartar anúncio?'; bottom= '<div class="mt-5 flex justify-center gap-4 w-full mx-auto" x-init="$nextTick(() => {htmx.process($el)})"><button type="button" hx-post="/back-office/manual/discard/${listing.id}" @htmx:after-request="close_modal()" hx-swap="outerHTML" hx-target="#style_listing" class="bg-green-500 py-1 px-2 rounded-md min-w-20 text-gray-100">Sim</button><button class="bg-red-400 rounded-md py-1 px-2 text-gray-100 min-w-20" x-on:click="is_modal_open = false;">Cancelar</button></div>'`}
                 >

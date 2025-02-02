@@ -31,7 +31,7 @@ export function Layout({ children }: { children: Child }) {
           >
             <div class="bg-white p-5 rounded-lg w-1/4 text-center">
               <h2 className="text-xl font-bold" x-text="title"></h2>
-              <p className="mt-2" x-text="body"></p>
+              <p className="mt-2" x-show="body" x-text="body"></p>
               <div x-html="bottom"></div>
             </div>
           </div>

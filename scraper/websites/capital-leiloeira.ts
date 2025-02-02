@@ -4,7 +4,7 @@ import {
   common_parsing_errors,
   ParsingErrorV1,
 } from "../events/errors/parsing-error";
-import { resolve_url } from "../lib/helpers";
+import { get_text, resolve_url } from "../lib/helpers";
 import { parse_style } from "../lib/parse-style";
 
 const URLS = {
@@ -27,7 +27,7 @@ export const scrape_capital_leiloeira = scrape_many(URLS, async (props) => {
   await page.waitForLoadState("networkidle");
 
   const is_empty = await page.$(
-    '.row p:has-text("foram encontrados resultados")'
+    '.row p:has-text("foram encontrados resultados")',
   );
 
   if (is_empty) {
@@ -132,7 +132,7 @@ export const scrape_capital_leiloeira = scrape_many(URLS, async (props) => {
 
         const target_url = resolve_url(
           "https://www.capital-leiloeira.pt/",
-          link
+          link,
         );
 
         enqueue_links({
@@ -141,7 +141,7 @@ export const scrape_capital_leiloeira = scrape_many(URLS, async (props) => {
           handler: enqueue_capital,
         });
       }
-    }
+    },
   );
 });
 
@@ -184,10 +184,15 @@ const enqueue_capital: EnqueueHandler = async ({
     concelho = await location.$("td.text-right").then((r) => r?.textContent());
   }
 
-  const price = await page
-    .$('.boxProposta .row_p:has-text("Valor M")')
-    .then((r) => r?.$(".value"))
-    .then((r) => r?.textContent() ?? null);
+  const price_section = page.locator(
+    '.boxProposta .row_p:has-text("Valor M") .value',
+  );
+
+  let price: string | null = null;
+
+  if (await price_section.count()) {
+    price = await get_text(price_section);
+  }
 
   const concelhos = get_concelhos();
   const concelho_id = concelhos[concelho ?? ""] ?? null;
@@ -200,6 +205,6 @@ const enqueue_capital: EnqueueHandler = async ({
       style_lookup_id: style,
       price,
     },
-    service
+    service,
   );
 };

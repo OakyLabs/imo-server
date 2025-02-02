@@ -68,7 +68,7 @@ async function main() {
 
       return acc;
     },
-    {},
+    {}
   );
 
   await async_storage.run(
@@ -79,7 +79,7 @@ async function main() {
       } else if (parsed_flags._.length === 1) {
         await single(all_services, parsed_flags._[0]);
       }
-    },
+    }
   );
 
   await wait_for_execution();
@@ -115,7 +115,7 @@ async function all(services_arr: Array<Schema.Service>, database: Database) {
 
   const filtered = services_arr.filter(
     (e): e is Omit<Schema.Service, "name" & { name: keyof typeof SCRAPERS }> =>
-      e.use && e.name in SCRAPERS,
+      e.use && e.name in SCRAPERS
   );
 
   logger.debug(`Starting scraping`);
@@ -132,12 +132,12 @@ async function all(services_arr: Array<Schema.Service>, database: Database) {
 
 async function _multiple_options(
   services: Record<string, Schema.Service>,
-  options: Array<string>,
+  options: Array<string>
 ) {}
 
 async function single(
   services: Record<string, Schema.Service>,
-  website: string,
+  website: string
 ) {
   if (!(website in SCRAPERS)) {
     logger.error(`Key not defined in scrapers. Exiting`);

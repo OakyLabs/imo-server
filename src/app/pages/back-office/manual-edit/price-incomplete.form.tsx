@@ -14,10 +14,10 @@ export function PriceIncomplete(props: PriceIncompleteProps) {
       id="price_listing"
     >
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Price Insufficient Data</h2>
+        <h2 className="text-xl font-semibold">Preço em falta</h2>
         <Pagination {...props} sector="price" />
       </div>
-      <div>
+      <div x-data="{filled: false}">
         <ul class="space-y-4">
           {props.incomplete_properties.map((listing) => (
             <li
@@ -29,11 +29,9 @@ export function PriceIncomplete(props: PriceIncompleteProps) {
                   href={listing.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="inline-flex items-center text-blue-600 hover:text-blue-800 max-w-7 mr-2 overflow-hidden truncate"
+                  class="inline-flex items-center text-blue-600 hover:text-blue-800"
                 >
-                  <span class="mr-2 overflow-hidden truncate lg:max-w-md max-w-7">
-                    {listing.title}
-                  </span>
+                  <span class="mr-2 overflow-hidden ">{listing.title}</span>
                   {/*<ExternalLink class="w-4 h-4" /> */}
                 </a>
               </div>
@@ -58,6 +56,15 @@ export function PriceIncomplete(props: PriceIncompleteProps) {
             </li>
           ))}
         </ul>
+
+        <button
+          type="submit"
+          class="text-white px-3 py-1 mt-2 rounded "
+          x-bind:class="filled ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-500 cursor-not-allowed'"
+          x-bind:disabled="!filled"
+        >
+          Gravar todos
+        </button>
       </div>
     </div>
   );
