@@ -24,7 +24,7 @@ app.use("*", async (c, next) => {
 
   return sessionMiddleware({
     encryptionKey: "password_at_least_32_characters_long", // Required for CookieStore, recommended for others
-    expireAfterSeconds: 60 * 10 * 6,
+    expireAfterSeconds: 60 * 60 * 24,
     cookieOptions: {
       sameSite: "Lax", // Recommended for basic CSRF protection in modern browsers
       path: "/", // Required for this library to work properly
