@@ -6,6 +6,7 @@ import {
 import { IncompleteHeader } from "../incomplete-header";
 import { SaveAllButton } from "../save-all.button";
 import { MunicipalityOptions } from "./municipality-options";
+import { DiscardButton } from "../open-modal";
 
 type MunicipalityIncompleteProps = {
   incomplete_properties: Array<DbProperty>;
@@ -83,6 +84,8 @@ export function MunicipalityIncomplete(props: MunicipalityIncompleteProps) {
                 >
                   <MunicipalityOptions municipalities={props.municipalities} />
                 </select>
+
+                <DiscardButton sector="municipality" listing_id={listing.id} />
               </li>
             ))}
           </ul>

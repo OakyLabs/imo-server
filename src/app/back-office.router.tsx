@@ -22,6 +22,7 @@ import { admin_logged_in_mw } from "./middlewares/admin.middleware";
 import { dashboard_router } from "./routers/back-office/dashboard/dashboard.router";
 import { bo_auth_router } from "./routers/back-office/auth/back-office-auth.router";
 import { manual_router } from "./routers/back-office/manual/manual.router";
+import { Locations } from "../modules/db/location";
 
 const back_office_router = new Hono<AppBindings>();
 
@@ -412,7 +413,6 @@ back_office_router.post(
   "/save/municipality",
   admin_logged_in_mw,
   validator("form", (value) => {
-    console.log({ value });
     return z.record(z.string(), z.string()).safeParse(value);
   }),
   async (c) => {
@@ -510,7 +510,7 @@ back_office_router.post(
 );
 
 back_office_router.post(
-  "/save/stuff",
+  "/save/style",
   admin_logged_in_mw,
   validator("form", (value) => {
     return z.record(z.string(), z.string()).safeParse(value);
@@ -600,6 +600,123 @@ back_office_router.post(
         incomplete_properties={style}
       />,
     );
+  },
+);
+
+back_office_router.delete(
+  "/manual/discard/:param/:id",
+  admin_logged_in_mw,
+  validator("param", (value) => {
+    return z
+      .object({
+        param: z.enum(["style", "price", "location"]),
+        id: z.coerce.number(),
+      })
+      .safeParse(value);
+  }),
+
+  async (c) => {
+    const { success, data } = c.req.valid("param");
+
+    if (!success) {
+      return c.redirect("/back-office/manual");
+    }
+
+    const db = create_db(c.env);
+
+    await Properties.discard(db, data.id);
+
+    if (data.param === "style") {
+      const [{ style_missing_properties_count, properties }, style] =
+        await Promise.all([
+          Properties.get_manual_and_style_list(db),
+          Styles.get_styles(db),
+        ]);
+
+      return c.html(
+        <StyleIncomplete
+          curr_page={1}
+          total_pages={Math.ceil(style_missing_properties_count / 10)}
+          all_styles={style}
+          incomplete_properties={properties}
+        />,
+      );
+    }
+
+    if (data.param === "location") {
+      const [
+        districts,
+        municipalities,
+        municipalities_incomplete,
+        [{ count: municiaplities_amount }],
+      ] = await Promise.all([
+        Locations.districts(db),
+        Locations.municipalities(db, undefined),
+        db
+          .select()
+          .from(properties_table)
+          .where(
+            and(
+              isNull(properties_table.concelho_id),
+              eq(properties_table.discarded, false),
+            ),
+          )
+          .limit(10),
+        db
+          .select({ count: count() })
+          .from(properties_table)
+          .where(
+            and(
+              isNull(properties_table.concelho_id),
+              eq(properties_table.discarded, false),
+            ),
+          ),
+      ]);
+
+      return c.html(
+        <MunicipalityIncomplete
+          incomplete_properties={municipalities_incomplete}
+          curr_page={1}
+          districts={districts}
+          municipalities={municipalities}
+          total_pages={Math.ceil(municiaplities_amount / 10)}
+        />,
+      );
+    }
+
+    if (data.param === "price") {
+      const [incomplete_price, [{ count: price_amount }]] = await Promise.all([
+        db
+          .select()
+          .from(properties_table)
+          .where(
+            and(
+              isNull(properties_table.price),
+              eq(properties_table.discarded, false),
+            ),
+          )
+          .limit(10),
+        db
+          .select({ count: count() })
+          .from(properties_table)
+          .where(
+            and(
+              isNull(properties_table.price),
+              eq(properties_table.discarded, false),
+            ),
+          ),
+      ]);
+
+      return c.html(
+        <PriceIncomplete
+          incomplete_properties={incomplete_price}
+          curr_page={1}
+          total_pages={Math.ceil(price_amount / 10)}
+        />,
+      );
+    }
+
+    return c.redirect("/back-office/manual");
   },
 );
 

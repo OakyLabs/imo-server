@@ -1,5 +1,6 @@
 import { DbProperty } from "../../../../../db/schema";
 import { IncompleteHeader } from "./incomplete-header";
+import { DiscardButton } from "./open-modal";
 import { SaveAllButton } from "./save-all.button";
 
 type PriceIncompleteProps = {
@@ -49,12 +50,7 @@ export function PriceIncomplete(props: PriceIncompleteProps) {
                   name="price"
                   class="border rounded px-2 py-1 w-32"
                 />
-                <button
-                  type="submit"
-                  class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                >
-                  Gravar
-                </button>
+                <DiscardButton listing_id={listing.id} target="price" />
               </form>
             </li>
           ))}

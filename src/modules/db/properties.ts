@@ -54,6 +54,7 @@ export namespace Properties {
   }
 
   export async function discard(db: IDatabase, id: DbProperty["id"]) {
+    console.log("Discarding");
     await db
       .update(properties_table)
       .set({ discarded: true })

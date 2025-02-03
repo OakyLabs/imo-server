@@ -27,7 +27,7 @@ export const scrape_lex_leiloes = scrape_many(URLS, async (props) => {
 
   const count_children = await children.count();
 
-  //   TODO: -1 because the last one is not really for the taking ( TODO still because the last one is the div, but within the a href still has stuff to do)
+  //   TODO: -1 because the last one is not really for the taking ( still because the last one is the div, but within the a href still has stuff to do)
   for (let i = 0; i < count_children - 1; ++i) {
     const item = children.nth(i);
     const tag_name = await item.evaluate((e) => e.tagName.toLowerCase());
@@ -107,6 +107,6 @@ const enqueue_lex_leiloes =
 
     on.property(
       { title, url: link, price, style_lookup_id: style, concelho_id: null },
-      service
+      service,
     );
   };

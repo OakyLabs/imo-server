@@ -1,6 +1,6 @@
 import { DbProperty, DbStyle } from "../../../../../db/schema";
 import { IncompleteHeader } from "./incomplete-header";
-import { Pagination } from "./pagination";
+import { DiscardButton } from "./open-modal";
 
 type StyleIncompleteProps = {
   all_styles: Array<DbStyle>;
@@ -23,7 +23,7 @@ export function StyleIncomplete(props: StyleIncompleteProps) {
       />
       <div x-data="{filled: false}">
         <form
-          hx-post="/back-office/save/stuff"
+          hx-post="/back-office/save/style"
           hx-target="#style_listing"
           hx-swap="outerHTML"
           x-on:input="filled = [...$el.querySelectorAll('select')].some(s => s.value)"
@@ -55,13 +55,7 @@ export function StyleIncomplete(props: StyleIncompleteProps) {
                     </option>
                   ))}
                 </select>
-                <button
-                  // https://github.com/alpinejs/alpine/discussions/4069 explanation about htmx:after-request
-                  type="button"
-                  x-on:click={`is_modal_open=true; title = 'Descartar anúncio?'; bottom= '<div class="mt-5 flex justify-center gap-4 w-full mx-auto" x-init="$nextTick(() => {htmx.process($el)})"><button type="button" hx-post="/back-office/manual/discard/${listing.id}" @htmx:after-request="close_modal()" hx-swap="outerHTML" hx-target="#style_listing" class="bg-green-500 py-1 px-2 rounded-md min-w-20 text-gray-100">Sim</button><button class="bg-red-400 rounded-md py-1 px-2 text-gray-100 min-w-20" x-on:click="is_modal_open = false;">Cancelar</button></div>'`}
-                >
-                  Descartar
-                </button>
+                <DiscardButton target="style" listing_id={listing.id} />
               </li>
             ))}
           </ul>
