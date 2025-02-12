@@ -2,7 +2,9 @@ export function ActiveUsersCount(props: { count: number }) {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-semibold mb-2">Utilizadores activos</h2>
+        <h2 class="text-xl font-semibold mb-2 text-gray-800">
+          Utilizadores activos
+        </h2>
         <div class="bg-blue-100 rounded-full p-3">
           <svg
             xmlns="http://www.w3.org/2000/svg"
