@@ -119,8 +119,18 @@ const enqueue_venda_judicial =
       }
     }
 
+    const description =
+      (await get_text(page.locator(".mkd-post-text-inner").first())) ?? "";
+
     on.property(
-      { title, url: link, price, style_lookup_id: style, concelho_id: null },
+      {
+        title,
+        url: link,
+        price,
+        style_lookup_id: style,
+        concelho_id: null,
+        description,
+      },
       service,
     );
   };

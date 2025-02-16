@@ -17,10 +17,13 @@ type OnErrorProps = {
 export type ScrapedData = Pick<
   DbProperty,
   "concelho_id" | "price" | "style_lookup_id" | "url" | "title"
->;
+> & {
+  description?: string | null;
+};
 
 export type ScrapedAuction = ScrapedData & {
   service_id: number;
+  description: string | null;
 };
 
 export type OnMethods = {

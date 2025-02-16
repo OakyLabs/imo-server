@@ -2,7 +2,7 @@ import type { Page } from "playwright";
 import { get_on_methods } from "../config/local-storage";
 import { scrape_main, EnqueueHandler } from "../config/wrapper";
 import { common_parsing_errors } from "../events/errors/parsing-error";
-import { resolve_url } from "../lib/helpers";
+import { get_text, resolve_url } from "../lib/helpers";
 import { parse_style } from "../lib/parse-style";
 
 const url = "https://www.vjn.pt/?chkimoveis=I&q=";
@@ -40,7 +40,7 @@ export const scrape_vjn = scrape_main(
 
       enqueue_links({ handler: enqueue_vjn, link, service }, true);
     }
-  }
+  },
 );
 
 const enqueue_vjn: EnqueueHandler = async ({ link, logger, page, service }) => {
@@ -102,6 +102,10 @@ const enqueue_vjn: EnqueueHandler = async ({ link, logger, page, service }) => {
       .textContent()
       .then((e) => e?.trim())) ?? null;
 
+  const description = page.locator(".post_content");
+
+  const description_text = await get_text(description);
+
   on.property(
     {
       concelho_id: null,
@@ -109,8 +113,9 @@ const enqueue_vjn: EnqueueHandler = async ({ link, logger, page, service }) => {
       style_lookup_id: parse_style(title),
       title,
       url: link,
+      description: description_text,
     },
-    service
+    service,
   );
 };
 

@@ -6,6 +6,7 @@ import {
   ParsingErrorV1,
 } from "../events/errors/parsing-error";
 import { parse_style } from "../lib/parse-style";
+import { get_text } from "../lib/helpers";
 
 const web_link = "https://cparaiso.pt/lots?cat=realestate";
 
@@ -104,12 +105,12 @@ export const scrape_cparaiso = scrape_many(
 
       enqueue_links(
         { link: anchor, service, handler: enqueue_c_paraiso },
-        true
+        true,
       );
     }
 
     //await new Promise(() => {});
-  }
+  },
 );
 
 const enqueue_c_paraiso: EnqueueHandler = async ({ service, link, page }) => {
@@ -183,9 +184,28 @@ const enqueue_c_paraiso: EnqueueHandler = async ({ service, link, page }) => {
     }
   }
 
+  let description_text: string = "";
+
+  const description_section = page.locator(".description > p");
+
+  const count = await description_section.count();
+
+  for (let i = 0; i < count; i++) {
+    const str = "\n " + ((await get_text(description_section.nth(i))) ?? "");
+
+    description_text += str;
+  }
+
   on.property(
-    { title, price, url: link, concelho_id: concelho, style_lookup_id: style },
-    service
+    {
+      title,
+      price,
+      url: link,
+      concelho_id: concelho,
+      style_lookup_id: style,
+      description: description_text,
+    },
+    service,
   );
 };
 

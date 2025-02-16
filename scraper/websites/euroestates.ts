@@ -93,6 +93,7 @@ export const scrape_euro_estates = scrape_main(async (props) => {
     }
 
     const concelho = concelhos[location_concelho] ?? null;
+
     enqueue_links({
       link: href,
       service,
@@ -180,6 +181,6 @@ const enqueue_euro_estates =
         style_lookup_id: style,
         price,
       },
-      service
+      service,
     );
   };

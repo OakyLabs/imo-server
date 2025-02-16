@@ -7,6 +7,7 @@ import {
 } from "../events/errors/parsing-error";
 import { parse_style } from "../lib/parse-style";
 import { to_pascal_case } from "../lib/pascal";
+import { get_text } from "../lib/helpers";
 
 const URLS = {
   imoveis: (page = 1) =>
@@ -89,10 +90,10 @@ export const scrape_leilon = scrape_many(URLS, async (props) => {
             link,
             service,
           },
-          true
+          true,
         );
       }
-    }
+    },
   );
 });
 
@@ -132,6 +133,14 @@ const enqueue_leilon: EnqueueHandler = async ({
 
   const style = parse_style(title);
 
+  const description_section = page.locator(".additional-content #description");
+
+  let description: string | null = "";
+
+  if (await description_section.count()) {
+    description = await get_text(description_section);
+  }
+
   on.property(
     {
       url: link,
@@ -139,8 +148,9 @@ const enqueue_leilon: EnqueueHandler = async ({
       title: to_pascal_case(title),
       price: price,
       concelho_id: null,
+      description,
     },
-    service
+    service,
   );
 };
 

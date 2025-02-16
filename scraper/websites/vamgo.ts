@@ -102,8 +102,9 @@ export const scrape_vamgo = scrape_main(async ({ page, service }) => {
         style_lookup_id: style,
         title,
         url: link,
+        description,
       },
-      service
+      service,
     );
   }
 });

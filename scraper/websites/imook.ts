@@ -1,11 +1,13 @@
+import { concelhosRelations } from "../../db/schema";
 import { get_concelhos, get_on_methods } from "../config/local-storage";
 import { EnqueueHandler, scrape_main } from "../config/wrapper";
 import {
   common_parsing_errors,
   ParsingErrorV1,
 } from "../events/errors/parsing-error";
-import { resolve_url } from "../lib/helpers";
+import { get_text, resolve_url } from "../lib/helpers";
 import { parse_style } from "../lib/parse-style";
+import { ScrapedAuction, ScrapedData } from "../scraper-types";
 
 const url_func = (page = 1) =>
   `http://www.imook.pt/imoveis?srt=1&dsrt=1&pag=${page}`;
@@ -84,12 +86,12 @@ export const scrape_imook = scrape_main(
               service,
               handler: enqueue_imook,
             },
-            true
+            true,
           );
         }
-      }
+      },
     );
-  }
+  },
 );
 
 const enqueue_imook: EnqueueHandler = async ({
@@ -134,7 +136,7 @@ const enqueue_imook: EnqueueHandler = async ({
   }
 
   const location = page.locator(
-    'li.detailItem:has(span.label:has-text("Concelho")) h4 span.value'
+    'li.detailItem:has(span.label:has-text("Concelho")) h4 span.value',
   );
 
   const location_amount = await location.count();
@@ -161,7 +163,7 @@ const enqueue_imook: EnqueueHandler = async ({
   const concelho = concelhos[concelho_text] ?? null;
 
   const style_section = page.locator(
-    'li.detailItem:has(span.label:has-text("Natureza")) h4 span.value'
+    'li.detailItem:has(span.label:has-text("Natureza")) h4 span.value',
   );
 
   const style_amount = await location.count();
@@ -199,14 +201,21 @@ const enqueue_imook: EnqueueHandler = async ({
     price = (await price_section.textContent().then((e) => e?.trim())) ?? null;
   }
 
-  on.property(
-    {
-      title,
-      url: link,
-      concelho_id: concelho,
-      price,
-      style_lookup_id: style,
-    },
-    service
-  );
+  const property_data: ScrapedData = {
+    concelho_id: concelho,
+    title,
+    url: link,
+    price,
+    style_lookup_id: style,
+  };
+
+  if (concelho == null) {
+    const description = page.locator("p.specsText");
+
+    const description_text = await get_text(description);
+
+    property_data.description = description_text;
+  }
+
+  on.property(property_data, service);
 };

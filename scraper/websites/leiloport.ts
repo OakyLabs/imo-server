@@ -6,6 +6,7 @@ import {
   ParsingErrorV1,
 } from "../events/errors/parsing-error";
 import { parse_style } from "../lib/parse-style";
+import { get_text } from "../lib/helpers";
 
 const URLS = {
   carta_fechada_imoveis: (page = 1) =>
@@ -67,51 +68,61 @@ export const scrape_leiloport = scrape_many(URLS, async (props) => {
           return;
         }
 
+        const location_locator = await item.$(".lp_title_block h4");
+
+        let location: string | null = "";
+        if (location_locator) {
+          location = await get_text(location_locator);
+        }
+
         enqueue_links({
           link,
           service,
-          handler: enqueue_leiloport,
+          handler: enqueue_leiloport(location),
         });
       }
-    }
+    },
   );
 });
 
-const enqueue_leiloport: EnqueueHandler = async ({ link, page, service }) => {
-  const on = get_on_methods();
-  const title = await page.locator("h1.product_title").textContent();
+const enqueue_leiloport =
+  (location: string | null): EnqueueHandler =>
+  async ({ link, page, service }) => {
+    const on = get_on_methods();
+    const title = await page.locator("h1.product_title").textContent();
 
-  if (!title) {
-    on.error({
-      error: new ParsingErrorV1({
-        html: await page.content(),
-        message: "No title",
+    if (!title) {
+      on.error({
+        error: new ParsingErrorV1({
+          html: await page.content(),
+          message: "No title",
+          url: link,
+          where: service.id,
+        }),
+        service,
+      });
+
+      return;
+    }
+
+    const price = await page
+      .locator("#lp_product_prices_left .lp_margens input")
+      .getAttribute("value");
+
+    const style = parse_style(title);
+
+    on.property(
+      {
+        title,
         url: link,
-        where: service.id,
-      }),
+        price,
+        style_lookup_id: style,
+        concelho_id: null,
+        description: location,
+      },
       service,
-    });
-
-    return;
-  }
-
-  const price = await page
-    .locator("#lp_product_prices_left .lp_margens input")
-    .getAttribute("value");
-
-  const style = parse_style(title);
-
-  on.property(
-    {
-      title,
-      url: link,
-      price,
-      style_lookup_id: style,
-      concelho_id: null,
-    },
-    service
-  );
-};
+    );
+  };
 
 async function get_pages(page: Page) {
   try {

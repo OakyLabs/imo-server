@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { AppBindings } from "../../../../types";
 import { admin_logged_in_mw } from "../../../middlewares/admin.middleware";
 import { create_db } from "../../../../../db";
-import { Locations } from "../../../../modules/db/location";
+import * as Locations from "../../../../modules/db/location";
 import { MunicipalityOptions } from "../../../pages/back-office/manual-edit/municipality/municipality-options";
 
 const manual_router = new Hono<AppBindings>();

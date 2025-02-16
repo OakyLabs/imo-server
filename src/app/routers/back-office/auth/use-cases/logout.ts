@@ -1,7 +1,7 @@
 import { Session, SessionData } from "hono-sessions";
 import { IDatabase } from "../../../../../../db";
 import { SessionDataTypes } from "../../../../../types";
-import { Sessions } from "../../../../../modules/db/sessions";
+import * as Sessions from "../../../../../modules/db/sessions";
 
 type LogoutProps = {
   is_all: boolean;

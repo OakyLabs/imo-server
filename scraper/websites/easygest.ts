@@ -1,8 +1,9 @@
 import { get_concelhos, get_on_methods } from "../config/local-storage";
 import { EnqueueHandler, scrape_main } from "../config/wrapper";
 import { common_parsing_errors } from "../events/errors/parsing-error";
-import { resolve_url } from "../lib/helpers";
+import { get_text, resolve_url } from "../lib/helpers";
 import { parse_style } from "../lib/parse-style";
+import { ScrapedData } from "../scraper-types";
 
 const url_func = (page = 1) =>
   `https://www.easygest.com.pt/imoveis/destaque?lbl=1&pag=${page}`;
@@ -81,9 +82,9 @@ export const scrape_easygest = scrape_main(
             service,
           });
         }
-      }
+      },
     );
-  }
+  },
 );
 
 const enqueue_easygest: EnqueueHandler = async ({ link, page, service }) => {
@@ -107,6 +108,8 @@ const enqueue_easygest: EnqueueHandler = async ({ link, page, service }) => {
 
   const location = page.locator("div.propertyLocation");
 
+  const location_text = await get_text(location);
+
   const concelho_freguesia = await location
     .textContent()
     .then((r) => r?.split(">").map((e) => e.trim())[0]);
@@ -128,14 +131,17 @@ const enqueue_easygest: EnqueueHandler = async ({ link, page, service }) => {
 
   const style = parse_style(title);
 
-  on.property(
-    {
-      concelho_id: concelho,
-      price,
-      url: link,
-      style_lookup_id: style,
-      title,
-    },
-    service
-  );
+  const property_data: ScrapedData = {
+    concelho_id: concelho,
+    price,
+    url: link,
+    style_lookup_id: style,
+    title,
+  };
+
+  if (concelho == null) {
+    property_data.description = location_text;
+  }
+
+  on.property(property_data, service);
 };

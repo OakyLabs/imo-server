@@ -4,7 +4,7 @@ import {
   ParsingErrorV1,
   common_parsing_errors,
 } from "../events/errors/parsing-error";
-import { resolve_url } from "../lib/helpers";
+import { get_text, resolve_url } from "../lib/helpers";
 import { parse_style } from "../lib/parse-style";
 
 const URL = (page = 1) => `https://imoveismontepio.pt/Comprar/?pn=${page}`;
@@ -204,6 +204,9 @@ export const scrape_montepio = scrape_main(
               concelho = concelhos[concelho_text];
             }
           }
+          const location = await get_text(
+            item.locator(".propertyLocation").first(),
+          );
 
           on.property(
             {
@@ -212,13 +215,14 @@ export const scrape_montepio = scrape_main(
               concelho_id: concelho,
               price: price ?? null,
               style_lookup_id: style,
+              description: location,
             },
-            service
+            service,
           );
         }
-      }
+      },
     );
 
     // const all_properties = page.locator("div.property");
-  }
+  },
 );

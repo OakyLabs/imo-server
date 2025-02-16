@@ -1,7 +1,8 @@
+import { and, count, desc, eq, isNull } from "drizzle-orm";
 import { Hono } from "hono";
-import { AppBindings } from "../types";
-import { z } from "zod";
 import { validator } from "hono/validator";
+import { z } from "zod";
+import { create_db } from "../../db";
 import {
   concelhos_table,
   districts_table,
@@ -9,20 +10,19 @@ import {
   service_table,
   style_lookup_table,
 } from "../../db/schema";
-import { create_db } from "../../db";
-import { and, count, desc, eq, isNull, like } from "drizzle-orm";
+import * as Locations from "../modules/db/location";
+import * as Properties from "../modules/db/properties";
+import * as Styles from "../modules/db/style_lookup";
+import { AppBindings } from "../types";
+import { admin_logged_in_mw } from "./middlewares/admin.middleware";
+import { ManageWeb } from "./pages/back-office/manage-websites/manage-websites";
 import { ManualEdit } from "./pages/back-office/manual-edit/manual-edit-form.page";
+import { MunicipalityIncomplete } from "./pages/back-office/manual-edit/municipality";
 import { PriceIncomplete } from "./pages/back-office/manual-edit/price-incomplete.form";
 import { StyleIncomplete } from "./pages/back-office/manual-edit/style-incomplete.form";
-import { MunicipalityIncomplete } from "./pages/back-office/manual-edit/municipality";
-import { ManageWeb } from "./pages/back-office/manage-websites/manage-websites";
-import { Properties } from "../modules/db/properties";
-import { Styles } from "../modules/db/style_lookup";
-import { admin_logged_in_mw } from "./middlewares/admin.middleware";
-import { dashboard_router } from "./routers/back-office/dashboard/dashboard.router";
 import { bo_auth_router } from "./routers/back-office/auth/back-office-auth.router";
+import { dashboard_router } from "./routers/back-office/dashboard/dashboard.router";
 import { manual_router } from "./routers/back-office/manual/manual.router";
-import { Locations } from "../modules/db/location";
 
 const back_office_router = new Hono<AppBindings>();
 
@@ -62,8 +62,8 @@ back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
       .where(
         and(
           isNull(properties_table.price),
-          eq(properties_table.discarded, false),
-        ),
+          eq(properties_table.discarded, false)
+        )
       )
       .limit(10),
     db
@@ -72,8 +72,8 @@ back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
       .where(
         and(
           isNull(properties_table.concelho_id),
-          eq(properties_table.discarded, false),
-        ),
+          eq(properties_table.discarded, false)
+        )
       )
       .limit(10),
     db
@@ -82,8 +82,8 @@ back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
       .where(
         and(
           isNull(properties_table.style_lookup_id),
-          eq(properties_table.discarded, false),
-        ),
+          eq(properties_table.discarded, false)
+        )
       )
       .limit(10),
     db.select().from(style_lookup_table),
@@ -130,7 +130,7 @@ back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
         curr_page: 1,
         total_pages: Math.ceil(style_amount / 10),
       }}
-    />,
+    />
   );
 });
 
@@ -181,7 +181,7 @@ back_office_router.post(
       .where(eq(properties_table.id, param));
 
     return c.redirect("/back-office/manual");
-  },
+  }
 );
 
 back_office_router.post(
@@ -223,7 +223,7 @@ back_office_router.post(
       .where(eq(properties_table.id, param));
 
     return c.redirect("/back-office/manual");
-  },
+  }
 );
 
 back_office_router.post(
@@ -275,7 +275,7 @@ back_office_router.post(
       .where(eq(properties_table.id, param));
 
     return c.redirect("/back-office/manual");
-  },
+  }
 );
 
 back_office_router.post(
@@ -302,7 +302,7 @@ back_office_router.post(
       .values({ name: body.name, link: body.website, use: false });
 
     return c.redirect("/back-office/dashboard");
-  },
+  }
 );
 
 back_office_router.get(
@@ -330,8 +330,8 @@ back_office_router.get(
       sector === "price"
         ? properties_table.price
         : sector === "style"
-          ? properties_table.style_lookup_id
-          : properties_table.concelho_id;
+        ? properties_table.style_lookup_id
+        : properties_table.concelho_id;
 
     const table = await db
       .select()
@@ -353,7 +353,7 @@ back_office_router.get(
           curr_page={page}
           total_pages={total_pages}
           incomplete_properties={table}
-        />,
+        />
       );
     }
 
@@ -365,7 +365,7 @@ back_office_router.get(
           total_pages={total_pages}
           incomplete_properties={table}
           all_styles={all_styles}
-        />,
+        />
       );
     }
 
@@ -383,9 +383,9 @@ back_office_router.get(
         incomplete_properties={table}
         municipalities={municipalities}
         districts={districts}
-      />,
+      />
     );
-  },
+  }
 );
 
 back_office_router.get("/manage-services", admin_logged_in_mw, async (c) => {
@@ -401,7 +401,7 @@ back_office_router.get("/manage-services", admin_logged_in_mw, async (c) => {
     .from(service_table)
     .leftJoin(
       properties_table,
-      eq(service_table.id, properties_table.service_id),
+      eq(service_table.id, properties_table.service_id)
     )
     .groupBy(service_table.id)
     .orderBy((fields) => desc(fields.auction_count));
@@ -428,8 +428,8 @@ back_office_router.post(
       .where(
         and(
           isNull(properties_table.concelho_id),
-          eq(properties_table.discarded, false),
-        ),
+          eq(properties_table.discarded, false)
+        )
       );
 
     let municipality_incomplete = await db
@@ -438,8 +438,8 @@ back_office_router.post(
       .where(
         and(
           isNull(properties_table.concelho_id),
-          eq(properties_table.discarded, false),
-        ),
+          eq(properties_table.discarded, false)
+        )
       )
       .limit(10);
 
@@ -451,7 +451,7 @@ back_office_router.post(
           curr_page={1}
           total_pages={Math.ceil(municipalities_amount / 10)}
           incomplete_properties={municipality_incomplete}
-        />,
+        />
       );
     }
 
@@ -468,7 +468,7 @@ back_office_router.post(
             .update(properties_table)
             .set({ concelho_id: municipality_id })
             .where(eq(properties_table.id, id));
-        }),
+        })
       );
     });
 
@@ -482,8 +482,8 @@ back_office_router.post(
       .where(
         and(
           isNull(properties_table.concelho_id),
-          eq(properties_table.discarded, false),
-        ),
+          eq(properties_table.discarded, false)
+        )
       );
 
     municipality_incomplete = await db
@@ -492,8 +492,8 @@ back_office_router.post(
       .where(
         and(
           isNull(properties_table.concelho_id),
-          eq(properties_table.discarded, false),
-        ),
+          eq(properties_table.discarded, false)
+        )
       )
       .limit(10);
 
@@ -504,9 +504,9 @@ back_office_router.post(
         curr_page={1}
         municipalities={concelhos}
         districts={districts}
-      />,
+      />
     );
-  },
+  }
 );
 
 back_office_router.post(
@@ -527,8 +527,8 @@ back_office_router.post(
           .where(
             and(
               isNull(properties_table.style_lookup_id),
-              eq(properties_table.discarded, false),
-            ),
+              eq(properties_table.discarded, false)
+            )
           )
           .limit(10),
         db.select().from(style_lookup_table),
@@ -538,8 +538,8 @@ back_office_router.post(
           .where(
             and(
               isNull(properties_table.style_lookup_id),
-              eq(properties_table.discarded, false),
-            ),
+              eq(properties_table.discarded, false)
+            )
           ),
       ]);
       return c.html(
@@ -548,7 +548,7 @@ back_office_router.post(
           total_pages={Math.ceil(style_amount / 10)}
           all_styles={all_styles}
           incomplete_properties={style}
-        />,
+        />
       );
     }
 
@@ -565,7 +565,7 @@ back_office_router.post(
             .update(properties_table)
             .set({ style_lookup_id: real_estate })
             .where(eq(properties_table.id, id));
-        }),
+        })
       );
     });
 
@@ -576,8 +576,8 @@ back_office_router.post(
         .where(
           and(
             isNull(properties_table.style_lookup_id),
-            eq(properties_table.discarded, false),
-          ),
+            eq(properties_table.discarded, false)
+          )
         )
         .limit(10),
       db.select().from(style_lookup_table),
@@ -587,8 +587,8 @@ back_office_router.post(
         .where(
           and(
             isNull(properties_table.style_lookup_id),
-            eq(properties_table.discarded, false),
-          ),
+            eq(properties_table.discarded, false)
+          )
         ),
     ]);
 
@@ -598,9 +598,9 @@ back_office_router.post(
         total_pages={Math.ceil(style_amount / 10)}
         all_styles={all_styles}
         incomplete_properties={style}
-      />,
+      />
     );
-  },
+  }
 );
 
 back_office_router.delete(
@@ -639,7 +639,7 @@ back_office_router.delete(
           total_pages={Math.ceil(style_missing_properties_count / 10)}
           all_styles={style}
           incomplete_properties={properties}
-        />,
+        />
       );
     }
 
@@ -658,8 +658,8 @@ back_office_router.delete(
           .where(
             and(
               isNull(properties_table.concelho_id),
-              eq(properties_table.discarded, false),
-            ),
+              eq(properties_table.discarded, false)
+            )
           )
           .limit(10),
         db
@@ -668,8 +668,8 @@ back_office_router.delete(
           .where(
             and(
               isNull(properties_table.concelho_id),
-              eq(properties_table.discarded, false),
-            ),
+              eq(properties_table.discarded, false)
+            )
           ),
       ]);
 
@@ -680,7 +680,7 @@ back_office_router.delete(
           districts={districts}
           municipalities={municipalities}
           total_pages={Math.ceil(municiaplities_amount / 10)}
-        />,
+        />
       );
     }
 
@@ -692,8 +692,8 @@ back_office_router.delete(
           .where(
             and(
               isNull(properties_table.price),
-              eq(properties_table.discarded, false),
-            ),
+              eq(properties_table.discarded, false)
+            )
           )
           .limit(10),
         db
@@ -702,8 +702,8 @@ back_office_router.delete(
           .where(
             and(
               isNull(properties_table.price),
-              eq(properties_table.discarded, false),
-            ),
+              eq(properties_table.discarded, false)
+            )
           ),
       ]);
 
@@ -712,12 +712,12 @@ back_office_router.delete(
           incomplete_properties={incomplete_price}
           curr_page={1}
           total_pages={Math.ceil(price_amount / 10)}
-        />,
+        />
       );
     }
 
     return c.redirect("/back-office/manual");
-  },
+  }
 );
 
 back_office_router.post(
@@ -743,7 +743,7 @@ back_office_router.post(
           total_pages={Math.ceil(style_missing_properties_count / 10)}
           all_styles={style}
           incomplete_properties={properties}
-        />,
+        />
       );
     }
 
@@ -761,9 +761,9 @@ back_office_router.post(
         total_pages={Math.ceil(style_missing_properties_count / 10)}
         all_styles={style}
         incomplete_properties={properties}
-      />,
+      />
     );
-  },
+  }
 );
 
 export { back_office_router };

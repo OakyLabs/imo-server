@@ -4,6 +4,7 @@ import {
   common_parsing_errors,
   ParsingErrorV1,
 } from "../events/errors/parsing-error";
+import { get_text } from "../lib/helpers";
 import { parse_style } from "../lib/parse-style";
 
 const url = "https://leiloatrium.pt/?_sft_tipo_de_bem=imovel";
@@ -39,46 +40,57 @@ export const scrape_leiloatrium = scrape_main(
         return;
       }
 
+      const location = await get_text(item.locator(".nvf-card-mapion").first());
+
       enqueue_links({
         link: anchor,
         service,
-        handler: enqueue_leiloatrium,
+        handler: enqueue_leiloatrium(location),
       });
     }
-  }
+  },
 );
 
-const enqueue_leiloatrium: EnqueueHandler = async ({ link, page, service }) => {
-  const on = get_on_methods();
+const enqueue_leiloatrium =
+  (location: string | null): EnqueueHandler =>
+  async ({ link, page, service }) => {
+    const on = get_on_methods();
 
-  const title_el = page.locator("h1");
+    const title_el = page.locator("h1");
 
-  const title = await title_el.textContent();
+    const title = await title_el.textContent();
 
-  if (!title) {
-    on.error({
-      error: new ParsingErrorV1({
-        html: await page.content(),
-        message: "No title found",
+    if (!title) {
+      on.error({
+        error: new ParsingErrorV1({
+          html: await page.content(),
+          message: "No title found",
+          url: link,
+          where: service.id,
+        }),
+        service,
+      });
+      return;
+    }
+
+    const price_el = page.locator(".amount").first();
+
+    let price: string | null = null;
+    if (await price_el.count()) {
+      price = (await price_el.textContent()) ?? null;
+    }
+
+    const style = parse_style(title);
+
+    on.property(
+      {
+        title,
         url: link,
-        where: service.id,
-      }),
+        price,
+        style_lookup_id: style,
+        concelho_id: null,
+        description: location,
+      },
       service,
-    });
-    return;
-  }
-
-  const price_el = page.locator(".amount").first();
-
-  let price: string | null = null;
-  if (await price_el.count()) {
-    price = (await price_el.textContent()) ?? null;
-  }
-
-  const style = parse_style(title);
-
-  on.property(
-    { title, url: link, price, style_lookup_id: style, concelho_id: null },
-    service
-  );
-};
+    );
+  };

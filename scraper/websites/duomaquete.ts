@@ -1,7 +1,7 @@
 import { get_concelhos, get_on_methods } from "../config/local-storage";
 import { EnqueueHandler, scrape_main } from "../config/wrapper";
 import { common_parsing_errors } from "../events/errors/parsing-error";
-import { resolve_url } from "../lib/helpers";
+import { get_text, resolve_url } from "../lib/helpers";
 import { parse_style } from "../lib/parse-style";
 
 const url = "https://duomaquete.com/leiloes/";
@@ -98,6 +98,12 @@ const enqueue_duomaquete =
 
     const style = parse_style(title);
 
+    const description = props.page
+      .locator(".imovel-details .imovel-details2 p")
+      .first();
+
+    const description_text = await get_text(description);
+
     on.property(
       {
         concelho_id: concelho,
@@ -105,7 +111,8 @@ const enqueue_duomaquete =
         style_lookup_id: style,
         title,
         url: props.link,
+        description: description_text,
       },
-      props.service
+      props.service,
     );
   };

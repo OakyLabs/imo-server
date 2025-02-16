@@ -236,7 +236,7 @@ const links_and_urls: Array<
     link: "https://ptrelax.net/produto-categoria/leiloes/imoveis-casas-apartamento-moradia-lojas-terrenos/",
   },
   {
-    name: "easydigest",
+    name: "easygest",
     link: "https://www.easygest.com.pt/imoveis/destaque?lbl=1",
   },
   {

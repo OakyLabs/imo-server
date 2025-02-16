@@ -2,9 +2,9 @@ import { Hono } from "hono";
 import { AppBindings } from "../../../../types";
 import { admin_logged_in_mw } from "../../../middlewares/admin.middleware";
 import { create_db } from "../../../../../db";
-import { Services } from "../../../../modules/db/services";
-import { Properties } from "../../../../modules/db/properties";
-import { Caches } from "../../../../modules/db/caches";
+import * as Services from "../../../../modules/db/services";
+import * as Properties from "../../../../modules/db/properties";
+import * as Caches from "../../../../modules/db/caches";
 import { Layout } from "../../../components/Layout";
 import { Dashboard } from "../../../pages/back-office/dashboard/dashboard";
 
@@ -42,7 +42,7 @@ dashboard_router.get("/", admin_logged_in_mw, async (c) => {
         is_on={scraper_info?.value === "true"}
         last_changed={scraper_info?.updated_at}
       />
-    </Layout>,
+    </Layout>
   );
 });
 

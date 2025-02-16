@@ -1,7 +1,7 @@
 import { get_on_methods, get_concelhos } from "../config/local-storage";
 import { scrape_many, EnqueueHandler } from "../config/wrapper";
 import { ParsingErrorV1 } from "../events/errors/parsing-error";
-import { resolve_url } from "../lib/helpers";
+import { get_text, resolve_url } from "../lib/helpers";
 import { parse_style } from "../lib/parse-style";
 
 const URLS = {
@@ -63,6 +63,14 @@ export const scrape_one_fix = scrape_many(
         continue;
       }
 
+      const title_section = item.locator(".property-title").first();
+
+      const text = await get_text(title_section);
+
+      if (/marca/gi.test(text ?? "")) {
+        continue;
+      }
+
       const target_url = resolve_url("https://www.onefix-leiloeiros.pt", href);
 
       enqueue_links({
@@ -71,7 +79,7 @@ export const scrape_one_fix = scrape_many(
         handler: enqueue_one_fix(concelho),
       });
     }
-  }
+  },
 );
 
 const enqueue_one_fix =
@@ -129,6 +137,6 @@ const enqueue_one_fix =
         style_lookup_id: style,
         price,
       },
-      service
+      service,
     );
   };

@@ -6,7 +6,7 @@ import {
   common_parsing_errors,
   ParsingErrorV1,
 } from "../events/errors/parsing-error";
-import { resolve_url } from "../lib/helpers";
+import { get_text, resolve_url } from "../lib/helpers";
 
 const URLS = {
   apartments: [
@@ -116,7 +116,7 @@ export const scrape_hipoges = scrape_many(
             return;
           }
 
-          const title = await title_el.textContent().then((r) => r?.trim());
+          const title = await get_text(title_el);
 
           if (!title) {
             on.error({
@@ -185,9 +185,9 @@ export const scrape_hipoges = scrape_many(
               url: link,
               concelho_id: concelho,
             },
-            service
+            service,
           );
-        })
+        }),
       );
 
       const p = await get_pagination(page);
@@ -212,7 +212,7 @@ export const scrape_hipoges = scrape_many(
     } while (paginator_amount);
 
     // console.log(await paginator_amount, key);
-  }
+  },
 );
 
 async function get_pagination(page: Page) {

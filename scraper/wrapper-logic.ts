@@ -1,6 +1,11 @@
 import { is_all_request, is_headless_request } from "./config/opts";
 import playwright from "playwright";
-import { BaseEvent, OnMethods, ScrapedAuction } from "./scraper-types";
+import {
+  BaseEvent,
+  OnMethods,
+  ScrapedAuction,
+  ScrapedData,
+} from "./scraper-types";
 import { Database } from "../db/memory";
 import { create_db } from "../db";
 import { env } from "./env";
@@ -10,6 +15,9 @@ import { async_storage } from "./config/local-storage";
 import { wait_for_execution } from "./config/wrapper";
 import { SCRAPERS } from "./scrapers";
 import { parsed_flags } from "./config/cli";
+import { attempt_ai } from "./lib/ai";
+import { fromAsyncThrowable } from "neverthrow";
+import { Queue } from "async-await-queue";
 
 const user_agent =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36";
@@ -68,7 +76,7 @@ async function main() {
 
       return acc;
     },
-    {}
+    {},
   );
 
   await async_storage.run(
@@ -79,7 +87,7 @@ async function main() {
       } else if (parsed_flags._.length === 1) {
         await single(all_services, parsed_flags._[0]);
       }
-    }
+    },
   );
 
   await wait_for_execution();
@@ -97,7 +105,58 @@ async function main() {
   if (results.length) {
     logger.debug(`Storing ${results.length} results`);
 
-    await database.store(results);
+    const split = results.reduce<{
+      without_location: Array<ScrapedAuction>;
+      with_location: Array<ScrapedAuction>;
+    }>(
+      (acc, val) => {
+        if (val.concelho_id == null) {
+          acc.without_location.push(val);
+        } else {
+          acc.with_location.push(val);
+        }
+
+        return acc;
+      },
+      {
+        without_location: [],
+        with_location: [],
+      },
+    );
+
+    logger.debug(`AIing ${split.without_location.length}`);
+    const arr: Array<ScrapedAuction> = [];
+
+    const ai_queue = new Queue(5);
+    for (let i = 0; i < split.without_location.length; ++i) {
+      ai_queue.run(async () => {
+        const e = split.without_location[i];
+
+        const attempt_safe = fromAsyncThrowable(attempt_ai);
+
+        const data = await attempt_safe(e);
+
+        if (data.isErr()) {
+          return;
+        }
+
+        const result = data.value;
+
+        if (result.success) {
+          arr.push({
+            ...e,
+            concelho_id: concelhos[result.municipality ?? ""] ?? null,
+          });
+        }
+      });
+    }
+
+    await ai_queue.flush();
+
+    const final = [...split.with_location, ...arr];
+    await database.store(final);
+
+    //await database.store(results);
     // const new_ones = await database.store(results);
   }
 }
@@ -115,7 +174,7 @@ async function all(services_arr: Array<Schema.Service>, database: Database) {
 
   const filtered = services_arr.filter(
     (e): e is Omit<Schema.Service, "name" & { name: keyof typeof SCRAPERS }> =>
-      e.use && e.name in SCRAPERS
+      e.use && e.name in SCRAPERS,
   );
 
   logger.debug(`Starting scraping`);
@@ -130,14 +189,9 @@ async function all(services_arr: Array<Schema.Service>, database: Database) {
   // console.log(filtered.length);
 }
 
-async function _multiple_options(
-  services: Record<string, Schema.Service>,
-  options: Array<string>
-) {}
-
 async function single(
   services: Record<string, Schema.Service>,
-  website: string
+  website: string,
 ) {
   if (!(website in SCRAPERS)) {
     logger.error(`Key not defined in scrapers. Exiting`);

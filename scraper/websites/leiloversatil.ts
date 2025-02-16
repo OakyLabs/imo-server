@@ -5,7 +5,7 @@ import {
   common_parsing_errors,
   ParsingErrorV1,
 } from "../events/errors/parsing-error";
-import { resolve_url } from "../lib/helpers";
+import { get_text, resolve_url } from "../lib/helpers";
 import { parse_style } from "../lib/parse-style";
 
 const URLS = {
@@ -72,60 +72,76 @@ export const scrape_leilo_versatil = scrape_many(URLS, async (props) => {
       continue;
     }
 
+    const description_section = item.locator(".texto_lote");
+    const count = await description_section.count();
+
+    let description: string = "";
+
+    if (count) {
+      for (let i = 0; i < count; ++i) {
+        const str = "\n" + ((await get_text(description_section.nth(i))) ?? "");
+
+        description += str;
+      }
+    }
+
     const link = resolve_url("https://leiloversatil.pt/", href);
 
     props.enqueue_links({
       link,
       service: props.service,
-      handler: enqueue_versatil,
+      handler: enqueue_versatil(description),
     });
   }
 });
 
-const enqueue_versatil: EnqueueHandler = async ({ link, page, service }) => {
-  const on = get_on_methods();
-  const price = page.locator("div.infobox_valorbase p");
+const enqueue_versatil =
+  (description: string): EnqueueHandler =>
+  async ({ link, page, service }) => {
+    const on = get_on_methods();
+    const price = page.locator("div.infobox_valorbase p");
 
-  const price_amount = await price.count();
+    const price_amount = await price.count();
 
-  const price_string = price_amount
-    ? await price.first().innerText()
-    : "Não listado";
+    const price_string = price_amount
+      ? await price.first().innerText()
+      : "Não listado";
 
-  const title = await page.locator("h1.post_title").textContent();
+    const title = await page.locator("h1.post_title").textContent();
 
-  if (!title) {
-    on.error({
-      error: new ParsingErrorV1({
-        message: "No title",
+    if (!title) {
+      on.error({
+        error: new ParsingErrorV1({
+          message: "No title",
+          url: link,
+          where: service.id,
+          html: await page.content(),
+        }),
+        service,
+      });
+
+      return;
+    }
+
+    const description = await page
+      .locator(".descricao_venda_detalhe")
+      .textContent()
+      .then((r) => r?.trim());
+
+    const style = parse_style(description ?? "");
+
+    on.property(
+      {
+        title,
         url: link,
-        where: service.id,
-        html: await page.content(),
-      }),
+        price: price_string,
+        style_lookup_id: style,
+        concelho_id: null,
+        description,
+      },
       service,
-    });
-
-    return;
-  }
-
-  const description = await page
-    .locator(".descricao_venda_detalhe")
-    .textContent()
-    .then((r) => r?.trim());
-
-  const style = parse_style(description ?? "");
-
-  on.property(
-    {
-      title,
-      url: link,
-      price: price_string,
-      style_lookup_id: style,
-      concelho_id: null,
-    },
-    service
-  );
-};
+    );
+  };
 
 async function check_is_empty(page: Page) {
   const base_filter = page.locator(".filtro_vazio");

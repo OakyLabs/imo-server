@@ -1,7 +1,7 @@
 import { get_concelhos, get_on_methods } from "../config/local-storage";
 import { EnqueueHandler, scrape_many } from "../config/wrapper";
 import { ParsingErrorV1 } from "../events/errors/parsing-error";
-import { resolve_url } from "../lib/helpers";
+import { get_text, resolve_url } from "../lib/helpers";
 import { parse_style } from "../lib/parse-style";
 
 const URLS = {
@@ -120,7 +120,7 @@ export const scrape_leilosoc = scrape_many(URLS, async (props) => {
           link,
         });
       }
-    }
+    },
   );
 });
 
@@ -175,6 +175,21 @@ const enqueue_leilosoc =
     const concelhos = get_concelhos();
     const concelho = concelhos[concelho_text ?? ""] ?? null;
 
+    const description_section = page.locator(
+      'div > h3:has-text("Localização")',
+    );
+
+    const count = await description_section.count();
+
+    let description_text = "";
+
+    if (count) {
+      for (let i = 0; i < count; ++i) {
+        const str = "\n" + ((await get_text(description_section.nth(i))) ?? "");
+        description_text + str;
+      }
+    }
+
     on.property(
       {
         title,
@@ -182,7 +197,8 @@ const enqueue_leilosoc =
         style_lookup_id: style,
         price,
         concelho_id: concelho,
+        description: description_text,
       },
-      service
+      service,
     );
   };

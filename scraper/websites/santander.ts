@@ -1,10 +1,11 @@
+import { Locator } from "playwright";
 import { get_on_methods } from "../config/local-storage";
 import { scrape_main, EnqueueHandler } from "../config/wrapper";
 import {
   ParsingErrorV1,
   common_parsing_errors,
 } from "../events/errors/parsing-error";
-import { resolve_url } from "../lib/helpers";
+import { get_text, resolve_url } from "../lib/helpers";
 import { parse_style } from "../lib/parse-style";
 
 const url_func = (page = 1) =>
@@ -100,53 +101,62 @@ export const scrape_santander = scrape_main(
 
           const link = resolve_url("https://imoveis.santander.pt/", href);
 
+          const location =
+            (await get_text(item.locator("h2.prop-title"))) ?? "";
+
           enqueue_links({
             link,
             service,
-            handler: enqueue_santander,
+            handler: enqueue_santander(location),
           });
         }
-      }
+      },
     );
-  }
+  },
 );
 
-const enqueue_santander: EnqueueHandler = async ({ link, page, service }) => {
-  const title_el = page.locator(".propHeader-details h2");
+const enqueue_santander =
+  (location: string): EnqueueHandler =>
+  async ({ link, page, service }) => {
+    const title_el = page.locator(".propHeader-details h2");
 
-  const title = await title_el.textContent().then((r) => r?.trim());
-  const on = get_on_methods();
+    const title = await title_el.textContent().then((r) => r?.trim());
+    const on = get_on_methods();
 
-  if (!title) {
-    on.error({
-      service,
-      error: common_parsing_errors.no_title({
-        html: await page.content(),
+    if (!title) {
+      on.error({
+        service,
+        error: common_parsing_errors.no_title({
+          html: await page.content(),
+          url: link,
+          where: service.id,
+        }),
+      });
+      return;
+    }
+
+    const price_el = page.locator(".propHeader-title span.propHeader-titleBig");
+
+    let price: string | null = null;
+
+    if (await price_el.count()) {
+      price = (await price_el.textContent().then((r) => r?.trim())) ?? null;
+    }
+
+    const style = parse_style(title);
+
+    on.property(
+      {
+        title,
         url: link,
-        where: service.id,
-      }),
-    });
-    return;
-  }
-
-  const price_el = page.locator(".propHeader-title span.propHeader-titleBig");
-
-  let price: string | null = null;
-
-  if (await price_el.count()) {
-    price = (await price_el.textContent().then((r) => r?.trim())) ?? null;
-  }
-
-  const style = parse_style(title);
-
-  on.property(
-    {
-      title,
-      url: link,
-      price,
-      style_lookup_id: style,
-      concelho_id: null,
-    },
-    service
-  );
-};
+        price,
+        style_lookup_id: style,
+        concelho_id: null,
+        description: location,
+      },
+      service,
+    );
+  };
+function get_item(arg0: Locator) {
+  throw new Error("Function not implemented.");
+}

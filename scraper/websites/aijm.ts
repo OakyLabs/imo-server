@@ -4,7 +4,7 @@ import {
   common_parsing_errors,
   ParsingErrorV1,
 } from "../events/errors/parsing-error";
-import { resolve_url } from "../lib/helpers";
+import { get_text, resolve_url } from "../lib/helpers";
 import { parse_style } from "../lib/parse-style";
 
 export const scrape_aijm = scrape_main(
@@ -169,6 +169,17 @@ const enqueue_aijm =
       }
     }
 
+    const description_section = page.locator("div[data-wow-delay] p");
+
+    let description_text: string | null = "";
+
+    const count = await description_section.count();
+
+    for (let i = 0; i < count; i++) {
+      const str = "\n" + ((await get_text(description_section.nth(i))) ?? "");
+      description_text += str;
+    }
+
     const concelho_id = concelhos[concelho ?? ""] ?? null;
 
     on.property(
@@ -178,6 +189,7 @@ const enqueue_aijm =
         concelho_id,
         style_lookup_id: style,
         price,
+        description: description_text,
       },
       service,
     );

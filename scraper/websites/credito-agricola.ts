@@ -4,7 +4,7 @@ import {
   common_parsing_errors,
   ParsingErrorV1,
 } from "../events/errors/parsing-error";
-import { resolve_url } from "../lib/helpers";
+import { get_text, resolve_url } from "../lib/helpers";
 import { parse_style } from "../lib/parse-style";
 import { to_pascal_case } from "../lib/pascal";
 
@@ -201,6 +201,10 @@ export const scrape_credito_agricola = scrape_main(
 
           const style = parse_style(title);
 
+          const location = await get_text(
+            item.locator(".info h3.location").first(),
+          );
+
           on.property(
             {
               title,
@@ -208,6 +212,7 @@ export const scrape_credito_agricola = scrape_main(
               concelho_id,
               price,
               style_lookup_id: style,
+              description: location,
             },
             service,
           );

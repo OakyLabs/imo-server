@@ -5,7 +5,7 @@ import {
   common_parsing_errors,
   ParsingErrorV1,
 } from "../events/errors/parsing-error";
-import { resolve_url } from "../lib/helpers";
+import { get_text, resolve_url } from "../lib/helpers";
 import { parse_style } from "../lib/parse-style";
 
 const URLS = {
@@ -160,7 +160,7 @@ export const scrape_leiloeira_forense = scrape_many(
         service,
       });
     }
-  }
+  },
 );
 
 const enqueue_leiloeira_forense =
@@ -170,7 +170,7 @@ const enqueue_leiloeira_forense =
 
     let price: string | null = null;
     const price_section = page.locator(
-      'tr:has-text("Valor Minimo") + tr:has-text("€")'
+      'tr:has-text("Valor Minimo") + tr:has-text("€")',
     );
 
     const price_section_amount = await price_section.count();
@@ -183,6 +183,10 @@ const enqueue_leiloeira_forense =
       price = price_amount ?? null;
     }
 
+    const description = page.locator("p.texto_lote").first();
+
+    const description_text = await get_text(description);
+
     on.property(
       {
         title,
@@ -190,7 +194,8 @@ const enqueue_leiloeira_forense =
         price,
         style_lookup_id: parse_style(title),
         url: link,
+        description: description_text,
       },
-      service
+      service,
     );
   };
