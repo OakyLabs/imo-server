@@ -62,8 +62,8 @@ back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
       .where(
         and(
           isNull(properties_table.price),
-          eq(properties_table.discarded, false)
-        )
+          eq(properties_table.discarded, false),
+        ),
       )
       .limit(10),
     db
@@ -72,8 +72,8 @@ back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
       .where(
         and(
           isNull(properties_table.concelho_id),
-          eq(properties_table.discarded, false)
-        )
+          eq(properties_table.discarded, false),
+        ),
       )
       .limit(10),
     db
@@ -82,8 +82,8 @@ back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
       .where(
         and(
           isNull(properties_table.style_lookup_id),
-          eq(properties_table.discarded, false)
-        )
+          eq(properties_table.discarded, false),
+        ),
       )
       .limit(10),
     db.select().from(style_lookup_table),
@@ -130,7 +130,7 @@ back_office_router.get("/manual", admin_logged_in_mw, async (c) => {
         curr_page: 1,
         total_pages: Math.ceil(style_amount / 10),
       }}
-    />
+    />,
   );
 });
 
@@ -181,23 +181,23 @@ back_office_router.post(
       .where(eq(properties_table.id, param));
 
     return c.redirect("/back-office/manual");
-  }
+  },
 );
 
 back_office_router.post(
   "/save/price/:param",
   admin_logged_in_mw,
   validator("form", (value, c) => {
-    const parsed = z.object({ price: z.string().min(3) }).safeParse(value);
+    const parsed = z.object({ price: z.string().min(1) }).safeParse(value);
 
     if (!parsed.success) {
       c.status(400);
-      return c.redirect("/back-office/manual");
+      return { success: false } as const;
     }
 
-    return parsed.data;
+    return { success: true, data: parsed.data } as const;
   }),
-  validator("param", (value, c) => {
+  validator("param", (value) => {
     const parsed = z
       .object({
         param: z.coerce.number(),
@@ -205,25 +205,97 @@ back_office_router.post(
       .safeParse(value);
 
     if (!parsed.success) {
-      c.status(400);
-      return c.redirect("/back-office/manual");
+      //c.status(400);
+      //return c.redirect("/back-office/manual");
+      return { success: false } as const;
     }
 
-    return parsed.data;
+    return { success: true, data: parsed.data } as const;
   }),
   async (c) => {
-    const { price } = c.req.valid("form");
-    const { param } = c.req.valid("param");
-
     const db = create_db(c.env);
+    const form_data = c.req.valid("form");
+
+    const param_data = c.req.valid("param");
+    console.log("here", form_data, param_data);
+
+    if (!form_data.success || !param_data.success) {
+      const [price_db, [{ count: price_properties_amount }]] =
+        await Promise.all([
+          db
+            .select()
+            .from(properties_table)
+            .where(
+              and(
+                isNull(properties_table.price),
+                eq(properties_table.discarded, true),
+              ),
+            )
+            .limit(10),
+          db
+            .select({ count: count() })
+            .from(properties_table)
+            .where(
+              and(
+                isNull(properties_table.price),
+                eq(properties_table.discarded, true),
+              ),
+            ),
+        ]);
+
+      return c.render(
+        <PriceIncomplete
+          incomplete_properties={price_db}
+          curr_page={1}
+          total_pages={Math.ceil(price_properties_amount / 10)}
+        />,
+      );
+    }
+
+    const { price } = form_data.data;
+    const { param } = param_data.data;
 
     await db
       .update(properties_table)
       .set({ price })
       .where(eq(properties_table.id, param));
 
-    return c.redirect("/back-office/manual");
-  }
+    const [price_db, [{ count: price_properties_amount }]] = await Promise.all([
+      db
+        .select()
+        .from(properties_table)
+        .where(
+          and(
+            isNull(properties_table.price),
+            eq(properties_table.discarded, true),
+          ),
+        )
+        .limit(10),
+      db
+        .select({ count: count() })
+        .from(properties_table)
+        .where(
+          and(
+            isNull(properties_table.price),
+            eq(properties_table.discarded, true),
+          ),
+        ),
+    ]);
+
+    if (!price_db.length) {
+      c.status(204);
+      c.res.headers.set("HX-Reswap", "innerHTML");
+      return c.body(null);
+    }
+
+    return c.render(
+      <PriceIncomplete
+        incomplete_properties={price_db}
+        curr_page={1}
+        total_pages={Math.ceil(price_properties_amount / 10)}
+      />,
+    );
+  },
 );
 
 back_office_router.post(
@@ -275,7 +347,7 @@ back_office_router.post(
       .where(eq(properties_table.id, param));
 
     return c.redirect("/back-office/manual");
-  }
+  },
 );
 
 back_office_router.post(
@@ -302,7 +374,7 @@ back_office_router.post(
       .values({ name: body.name, link: body.website, use: false });
 
     return c.redirect("/back-office/dashboard");
-  }
+  },
 );
 
 back_office_router.get(
@@ -330,8 +402,8 @@ back_office_router.get(
       sector === "price"
         ? properties_table.price
         : sector === "style"
-        ? properties_table.style_lookup_id
-        : properties_table.concelho_id;
+          ? properties_table.style_lookup_id
+          : properties_table.concelho_id;
 
     const table = await db
       .select()
@@ -353,7 +425,7 @@ back_office_router.get(
           curr_page={page}
           total_pages={total_pages}
           incomplete_properties={table}
-        />
+        />,
       );
     }
 
@@ -365,7 +437,7 @@ back_office_router.get(
           total_pages={total_pages}
           incomplete_properties={table}
           all_styles={all_styles}
-        />
+        />,
       );
     }
 
@@ -383,9 +455,9 @@ back_office_router.get(
         incomplete_properties={table}
         municipalities={municipalities}
         districts={districts}
-      />
+      />,
     );
-  }
+  },
 );
 
 back_office_router.get("/manage-services", admin_logged_in_mw, async (c) => {
@@ -401,7 +473,7 @@ back_office_router.get("/manage-services", admin_logged_in_mw, async (c) => {
     .from(service_table)
     .leftJoin(
       properties_table,
-      eq(service_table.id, properties_table.service_id)
+      eq(service_table.id, properties_table.service_id),
     )
     .groupBy(service_table.id)
     .orderBy((fields) => desc(fields.auction_count));
@@ -428,8 +500,8 @@ back_office_router.post(
       .where(
         and(
           isNull(properties_table.concelho_id),
-          eq(properties_table.discarded, false)
-        )
+          eq(properties_table.discarded, false),
+        ),
       );
 
     let municipality_incomplete = await db
@@ -438,8 +510,8 @@ back_office_router.post(
       .where(
         and(
           isNull(properties_table.concelho_id),
-          eq(properties_table.discarded, false)
-        )
+          eq(properties_table.discarded, false),
+        ),
       )
       .limit(10);
 
@@ -451,7 +523,7 @@ back_office_router.post(
           curr_page={1}
           total_pages={Math.ceil(municipalities_amount / 10)}
           incomplete_properties={municipality_incomplete}
-        />
+        />,
       );
     }
 
@@ -468,7 +540,7 @@ back_office_router.post(
             .update(properties_table)
             .set({ concelho_id: municipality_id })
             .where(eq(properties_table.id, id));
-        })
+        }),
       );
     });
 
@@ -482,8 +554,8 @@ back_office_router.post(
       .where(
         and(
           isNull(properties_table.concelho_id),
-          eq(properties_table.discarded, false)
-        )
+          eq(properties_table.discarded, false),
+        ),
       );
 
     municipality_incomplete = await db
@@ -492,8 +564,8 @@ back_office_router.post(
       .where(
         and(
           isNull(properties_table.concelho_id),
-          eq(properties_table.discarded, false)
-        )
+          eq(properties_table.discarded, false),
+        ),
       )
       .limit(10);
 
@@ -504,9 +576,9 @@ back_office_router.post(
         curr_page={1}
         municipalities={concelhos}
         districts={districts}
-      />
+      />,
     );
-  }
+  },
 );
 
 back_office_router.post(
@@ -527,8 +599,8 @@ back_office_router.post(
           .where(
             and(
               isNull(properties_table.style_lookup_id),
-              eq(properties_table.discarded, false)
-            )
+              eq(properties_table.discarded, false),
+            ),
           )
           .limit(10),
         db.select().from(style_lookup_table),
@@ -538,8 +610,8 @@ back_office_router.post(
           .where(
             and(
               isNull(properties_table.style_lookup_id),
-              eq(properties_table.discarded, false)
-            )
+              eq(properties_table.discarded, false),
+            ),
           ),
       ]);
       return c.html(
@@ -548,7 +620,7 @@ back_office_router.post(
           total_pages={Math.ceil(style_amount / 10)}
           all_styles={all_styles}
           incomplete_properties={style}
-        />
+        />,
       );
     }
 
@@ -565,7 +637,7 @@ back_office_router.post(
             .update(properties_table)
             .set({ style_lookup_id: real_estate })
             .where(eq(properties_table.id, id));
-        })
+        }),
       );
     });
 
@@ -576,8 +648,8 @@ back_office_router.post(
         .where(
           and(
             isNull(properties_table.style_lookup_id),
-            eq(properties_table.discarded, false)
-          )
+            eq(properties_table.discarded, false),
+          ),
         )
         .limit(10),
       db.select().from(style_lookup_table),
@@ -587,8 +659,8 @@ back_office_router.post(
         .where(
           and(
             isNull(properties_table.style_lookup_id),
-            eq(properties_table.discarded, false)
-          )
+            eq(properties_table.discarded, false),
+          ),
         ),
     ]);
 
@@ -598,9 +670,9 @@ back_office_router.post(
         total_pages={Math.ceil(style_amount / 10)}
         all_styles={all_styles}
         incomplete_properties={style}
-      />
+      />,
     );
-  }
+  },
 );
 
 back_office_router.delete(
@@ -639,7 +711,7 @@ back_office_router.delete(
           total_pages={Math.ceil(style_missing_properties_count / 10)}
           all_styles={style}
           incomplete_properties={properties}
-        />
+        />,
       );
     }
 
@@ -658,8 +730,8 @@ back_office_router.delete(
           .where(
             and(
               isNull(properties_table.concelho_id),
-              eq(properties_table.discarded, false)
-            )
+              eq(properties_table.discarded, false),
+            ),
           )
           .limit(10),
         db
@@ -668,8 +740,8 @@ back_office_router.delete(
           .where(
             and(
               isNull(properties_table.concelho_id),
-              eq(properties_table.discarded, false)
-            )
+              eq(properties_table.discarded, false),
+            ),
           ),
       ]);
 
@@ -680,7 +752,7 @@ back_office_router.delete(
           districts={districts}
           municipalities={municipalities}
           total_pages={Math.ceil(municiaplities_amount / 10)}
-        />
+        />,
       );
     }
 
@@ -692,8 +764,8 @@ back_office_router.delete(
           .where(
             and(
               isNull(properties_table.price),
-              eq(properties_table.discarded, false)
-            )
+              eq(properties_table.discarded, false),
+            ),
           )
           .limit(10),
         db
@@ -702,8 +774,8 @@ back_office_router.delete(
           .where(
             and(
               isNull(properties_table.price),
-              eq(properties_table.discarded, false)
-            )
+              eq(properties_table.discarded, false),
+            ),
           ),
       ]);
 
@@ -712,12 +784,12 @@ back_office_router.delete(
           incomplete_properties={incomplete_price}
           curr_page={1}
           total_pages={Math.ceil(price_amount / 10)}
-        />
+        />,
       );
     }
 
     return c.redirect("/back-office/manual");
-  }
+  },
 );
 
 back_office_router.post(
@@ -743,7 +815,7 @@ back_office_router.post(
           total_pages={Math.ceil(style_missing_properties_count / 10)}
           all_styles={style}
           incomplete_properties={properties}
-        />
+        />,
       );
     }
 
@@ -761,9 +833,9 @@ back_office_router.post(
         total_pages={Math.ceil(style_missing_properties_count / 10)}
         all_styles={style}
         incomplete_properties={properties}
-      />
+      />,
     );
-  }
+  },
 );
 
 export { back_office_router };
